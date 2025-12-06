@@ -1,0 +1,57 @@
+# ---- Go ----
+bin/
+build/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go modules
+vendor/
+
+# Go coverage
+coverage.*
+*.coverprofile
+
+# ---- Protobuf ----
+# Generated Go files (optional)
+# If you commit generated code, remove this.
+*.pb.go
+
+# ---- JetBrains / VSCode ----
+.idea/
+.vscode/
+*.code-workspace
+
+# ---- OS Files ----
+.DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log
+
+# ---- Docker ----
+*.tar
+docker-data/
+nats-data/
+minio-data/
+postgres-data/
+
+# ---- WSL cache ----
+*.swp
+*.swo
+
+# ---- Node (if any frontend later) ----
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+
+# ---- Temporary files ----
+tmp/
+temp/
+*.tmp
