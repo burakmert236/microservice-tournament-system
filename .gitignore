@@ -17,11 +17,6 @@ vendor/
 coverage.*
 *.coverprofile
 
-# ---- Protobuf ----
-# Generated Go files (optional)
-# If you commit generated code, remove this.
-*.pb.go
-
 # ---- JetBrains / VSCode ----
 .idea/
 .vscode/
