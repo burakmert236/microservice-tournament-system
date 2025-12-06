@@ -1,4 +1,4 @@
-module github.com/burakmert236/goodswipe
+module github.com/burakmert236/goodswipe-common
 
 go 1.25.5
 

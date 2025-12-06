@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	utils "github.com/burakmert236/goodswipe/internal/utils"
+	utils "github.com/burakmert236/goodswipe-common/utils"
 )
 
 type RedisConfig struct {

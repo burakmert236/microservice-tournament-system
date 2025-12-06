@@ -3,7 +3,7 @@ package jetstream
 import (
 	"log"
 
-	utils "github.com/burakmert236/goodswipe/internal/utils"
+	utils "github.com/burakmert236/goodswipe-common/utils"
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 )
