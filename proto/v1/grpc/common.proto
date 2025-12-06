@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "github.com/burakmert236/goodswipe/generated/grpc";
+
+// Common Types
+message MessageResponse {
+    bool isSuccess = 1;
+    string message = 2;
+}

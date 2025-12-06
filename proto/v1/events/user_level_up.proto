@@ -4,6 +4,7 @@ package events;
 
 option go_package = "github.com/burakmert236/goodswipe/generated/events";
 
-message TournamentCompleted {
-    string tournamentId = 1;
-}
+message UserLevelUp {
+    string userId = 1;
+    int32 newLevel = 2;
+} 

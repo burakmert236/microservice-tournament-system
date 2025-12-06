@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "github.com/burakmert236/goodswipe/generated/grpc";
+
+// Services
+service LeaderboardService {
+    rpc GetGlobalLeaderboard(GetGlobalLeaderboardRequest) returns (GetGlobalLeaderboardResponse);
+    rpc GetTournamentLeaderboard(GetTournamentLeaderboardRequest) returns (GetTournamentLeaderboardResponse);
+    rpc GetTournamentRank(GetTournamentRankRequest) returns (GetTournamentRankResponse);
+}
+
+// Requests
+message GetGlobalLeaderboardRequest {}
+
+message GetTournamentLeaderboardRequest {}
+
+message GetTournamentRankRequest {}
+
+// Responses
+message GetGlobalLeaderboardResponse {
+    repeated UserInfo users = 1;
+}
+
+message GetTournamentLeaderboardResponse {
+    repeated UserInfo users = 1;
+}
+
+message GetTournamentRankResponse {
+    int32 rank = 1;
+}
+
+// Types
+message UserInfo {
+    string user_id = 1;
+    string display_name = 2;
+    int64 score = 3;
+}

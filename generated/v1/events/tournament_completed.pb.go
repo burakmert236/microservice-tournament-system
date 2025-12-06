@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.20.3
-// source: events/tournament_completed.proto
+// source: v1/events/tournament_completed.proto
 
 package events
 
@@ -30,7 +30,7 @@ type TournamentCompleted struct {
 
 func (x *TournamentCompleted) Reset() {
 	*x = TournamentCompleted{}
-	mi := &file_events_tournament_completed_proto_msgTypes[0]
+	mi := &file_v1_events_tournament_completed_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *TournamentCompleted) String() string {
 func (*TournamentCompleted) ProtoMessage() {}
 
 func (x *TournamentCompleted) ProtoReflect() protoreflect.Message {
-	mi := &file_events_tournament_completed_proto_msgTypes[0]
+	mi := &file_v1_events_tournament_completed_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *TournamentCompleted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TournamentCompleted.ProtoReflect.Descriptor instead.
 func (*TournamentCompleted) Descriptor() ([]byte, []int) {
-	return file_events_tournament_completed_proto_rawDescGZIP(), []int{0}
+	return file_v1_events_tournament_completed_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TournamentCompleted) GetTournamentId() string {
@@ -65,31 +65,31 @@ func (x *TournamentCompleted) GetTournamentId() string {
 	return ""
 }
 
-var File_events_tournament_completed_proto protoreflect.FileDescriptor
+var File_v1_events_tournament_completed_proto protoreflect.FileDescriptor
 
-const file_events_tournament_completed_proto_rawDesc = "" +
+const file_v1_events_tournament_completed_proto_rawDesc = "" +
 	"\n" +
-	"!events/tournament_completed.proto\x12\x06events\"9\n" +
+	"$v1/events/tournament_completed.proto\x12\x06events\"9\n" +
 	"\x13TournamentCompleted\x12\"\n" +
 	"\ftournamentId\x18\x01 \x01(\tR\ftournamentIdB4Z2github.com/burakmert236/goodswipe/generated/eventsb\x06proto3"
 
 var (
-	file_events_tournament_completed_proto_rawDescOnce sync.Once
-	file_events_tournament_completed_proto_rawDescData []byte
+	file_v1_events_tournament_completed_proto_rawDescOnce sync.Once
+	file_v1_events_tournament_completed_proto_rawDescData []byte
 )
 
-func file_events_tournament_completed_proto_rawDescGZIP() []byte {
-	file_events_tournament_completed_proto_rawDescOnce.Do(func() {
-		file_events_tournament_completed_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_events_tournament_completed_proto_rawDesc), len(file_events_tournament_completed_proto_rawDesc)))
+func file_v1_events_tournament_completed_proto_rawDescGZIP() []byte {
+	file_v1_events_tournament_completed_proto_rawDescOnce.Do(func() {
+		file_v1_events_tournament_completed_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_v1_events_tournament_completed_proto_rawDesc), len(file_v1_events_tournament_completed_proto_rawDesc)))
 	})
-	return file_events_tournament_completed_proto_rawDescData
+	return file_v1_events_tournament_completed_proto_rawDescData
 }
 
-var file_events_tournament_completed_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_events_tournament_completed_proto_goTypes = []any{
+var file_v1_events_tournament_completed_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_v1_events_tournament_completed_proto_goTypes = []any{
 	(*TournamentCompleted)(nil), // 0: events.TournamentCompleted
 }
-var file_events_tournament_completed_proto_depIdxs = []int32{
+var file_v1_events_tournament_completed_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -97,26 +97,26 @@ var file_events_tournament_completed_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_events_tournament_completed_proto_init() }
-func file_events_tournament_completed_proto_init() {
-	if File_events_tournament_completed_proto != nil {
+func init() { file_v1_events_tournament_completed_proto_init() }
+func file_v1_events_tournament_completed_proto_init() {
+	if File_v1_events_tournament_completed_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_events_tournament_completed_proto_rawDesc), len(file_events_tournament_completed_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_events_tournament_completed_proto_rawDesc), len(file_v1_events_tournament_completed_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_events_tournament_completed_proto_goTypes,
-		DependencyIndexes: file_events_tournament_completed_proto_depIdxs,
-		MessageInfos:      file_events_tournament_completed_proto_msgTypes,
+		GoTypes:           file_v1_events_tournament_completed_proto_goTypes,
+		DependencyIndexes: file_v1_events_tournament_completed_proto_depIdxs,
+		MessageInfos:      file_v1_events_tournament_completed_proto_msgTypes,
 	}.Build()
-	File_events_tournament_completed_proto = out.File
-	file_events_tournament_completed_proto_goTypes = nil
-	file_events_tournament_completed_proto_depIdxs = nil
+	File_v1_events_tournament_completed_proto = out.File
+	file_v1_events_tournament_completed_proto_goTypes = nil
+	file_v1_events_tournament_completed_proto_depIdxs = nil
 }

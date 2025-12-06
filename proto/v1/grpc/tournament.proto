@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "github.com/burakmert236/goodswipe/generated/grpc";
+
+import "v1/grpc/common.proto";
+
+// Services
+service TournamentService {
+    rpc EnterTournament(EnterTournamentRequest) returns (MessageResponse);
+    rpc ClaimReward(ClaimRewardRequest) returns (MessageResponse);
+}
+
+// Requests
+message EnterTournamentRequest {
+    string user_id = 1;
+}
+
+message ClaimRewardRequest {
+    string user_id = 1;
+}
