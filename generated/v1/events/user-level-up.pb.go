@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.20.3
-// source: v1/events/user_level_up.proto
+// source: v1/events/user-level-up.proto
 
 package events
 
@@ -77,7 +77,7 @@ var File_v1_events_user_level_up_proto protoreflect.FileDescriptor
 
 const file_v1_events_user_level_up_proto_rawDesc = "" +
 	"\n" +
-	"\x1dv1/events/user_level_up.proto\x12\x06events\"A\n" +
+	"\x1dv1/events/user-level-up.proto\x12\x06events\"A\n" +
 	"\vUserLevelUp\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
 	"\bnewLevel\x18\x02 \x01(\x05R\bnewLevelB4Z2github.com/burakmert236/goodswipe/generated/eventsb\x06proto3"

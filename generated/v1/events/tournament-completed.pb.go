@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.20.3
-// source: v1/events/tournament_completed.proto
+// source: v1/events/tournament-completed.proto
 
 package events
 
@@ -69,7 +69,7 @@ var File_v1_events_tournament_completed_proto protoreflect.FileDescriptor
 
 const file_v1_events_tournament_completed_proto_rawDesc = "" +
 	"\n" +
-	"$v1/events/tournament_completed.proto\x12\x06events\"9\n" +
+	"$v1/events/tournament-completed.proto\x12\x06events\"9\n" +
 	"\x13TournamentCompleted\x12\"\n" +
 	"\ftournamentId\x18\x01 \x01(\tR\ftournamentIdB4Z2github.com/burakmert236/goodswipe/generated/eventsb\x06proto3"
 

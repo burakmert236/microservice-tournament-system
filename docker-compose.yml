@@ -12,11 +12,21 @@ services:
       - nats_data:/data
     restart: unless-stopped
   redis:
-    image: redis:7.2
-    container_name: redis
-    ports:
+    image: redis:7-alpine
+    ports: 
       - "6379:6379"
-    command: [ "redis-server", "--appendonly", "yes" ]
+    command: redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
   dynamodb:
     image: amazon/dynamodb-local
     container_name: dynamodb
@@ -51,7 +61,29 @@ services:
           aws dynamodb create-table --endpoint-url http://dynamodb:8000 --cli-input-json file://$$f || echo 'Table already exists or creation failed for: '$$f;
         done
       "
+
+  # Microservices
+  leaderboard-service:
+    container_name: leaderboard-service
+    build: 
+      context: .
+      dockerfile: ./services/leaderboard-service/Dockerfile
+    depends_on:
+      - redis
+      - dynamodb
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - REDIS_POOL_SIZE=20
+      - REDIS_MAX_RETRIES=3
+      - REDIS_DIAL_TIMEOUT=5s
+      - REDIS_READ_TIMEOUT=3s
+      - REDIS_WRITE_TIMEOUT=3s
+    ports:
+      - "8010:8010"
   
 volumes:
-  dynamodb_data:
+  redis_data:
   nats_data:
+  dynamodb_data:
