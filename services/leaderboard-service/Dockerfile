@@ -1,21 +1,26 @@
 # Build stage
 FROM golang:1.25-alpine AS builder
+
 WORKDIR /app
 
-COPY ../../go.mod ../../go.sum ./
+COPY services/leaderboard-service/go.mod services/leaderboard-service/go.mod
+COPY services/leaderboard-service/go.sum services/leaderboard-service/go.sum
 
-COPY ../../ ./
+COPY common /app/common
 
 WORKDIR /app/services/leaderboard-service
 
-RUN go mod tidy
+RUN go mod download
+
+COPY services/leaderboard-service/ .
+
 RUN go build -o leaderboard-service
 
 # Run stage
 FROM alpine:3.19
 WORKDIR /app
 
-COPY --from=builder /app/services/leaderboard-service/leaderboard-service .
+COPY --from=builder /app/services/leaderboard-service .
 
 EXPOSE 8010
-CMD ["./leaderboard-service"]
+CMD ["/app/leaderboard-service"]

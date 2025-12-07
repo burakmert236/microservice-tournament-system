@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package events;
-
-option go_package = "github.com/burakmert236/goodswipe/generated/events";
-
-message TournamentCompleted {
-    string tournamentId = 1;
-} 

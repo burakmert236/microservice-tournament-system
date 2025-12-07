@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpc;
 
-option go_package = "github.com/burakmert236/goodswipe/generated/grpc";
+option go_package = "github.com/burakmert236/goodswipe-common/generated/grpc";
 
 import "v1/grpc/common.proto";
 

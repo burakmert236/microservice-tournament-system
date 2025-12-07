@@ -345,7 +345,7 @@ const file_v1_grpc_leaderboard_proto_rawDesc = "" +
 	"\x12LeaderboardService\x12]\n" +
 	"\x14GetGlobalLeaderboard\x12!.grpc.GetGlobalLeaderboardRequest\x1a\".grpc.GetGlobalLeaderboardResponse\x12i\n" +
 	"\x18GetTournamentLeaderboard\x12%.grpc.GetTournamentLeaderboardRequest\x1a&.grpc.GetTournamentLeaderboardResponse\x12T\n" +
-	"\x11GetTournamentRank\x12\x1e.grpc.GetTournamentRankRequest\x1a\x1f.grpc.GetTournamentRankResponseB2Z0github.com/burakmert236/goodswipe/generated/grpcb\x06proto3"
+	"\x11GetTournamentRank\x12\x1e.grpc.GetTournamentRankRequest\x1a\x1f.grpc.GetTournamentRankResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
 
 var (
 	file_v1_grpc_leaderboard_proto_rawDescOnce sync.Once

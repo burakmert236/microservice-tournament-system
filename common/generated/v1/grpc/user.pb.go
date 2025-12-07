@@ -178,7 +178,7 @@ const file_v1_grpc_user_proto_rawDesc = "" +
 	"\vUserService\x12?\n" +
 	"\n" +
 	"CreateUser\x12\x17.grpc.CreateUserRequest\x1a\x18.grpc.CreateUserResponse\x12D\n" +
-	"\x0eUpdateProgress\x12\x1b.grpc.UpdateProgressRequest\x1a\x15.grpc.MessageResponseB2Z0github.com/burakmert236/goodswipe/generated/grpcb\x06proto3"
+	"\x0eUpdateProgress\x12\x1b.grpc.UpdateProgressRequest\x1a\x15.grpc.MessageResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
 
 var (
 	file_v1_grpc_user_proto_rawDescOnce sync.Once

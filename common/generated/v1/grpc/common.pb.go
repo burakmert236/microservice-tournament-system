@@ -81,7 +81,7 @@ const file_v1_grpc_common_proto_rawDesc = "" +
 	"\x14v1/grpc/common.proto\x12\x04grpc\"I\n" +
 	"\x0fMessageResponse\x12\x1c\n" +
 	"\tisSuccess\x18\x01 \x01(\bR\tisSuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessageB2Z0github.com/burakmert236/goodswipe/generated/grpcb\x06proto3"
+	"\amessage\x18\x02 \x01(\tR\amessageB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
 
 var (
 	file_v1_grpc_common_proto_rawDescOnce sync.Once

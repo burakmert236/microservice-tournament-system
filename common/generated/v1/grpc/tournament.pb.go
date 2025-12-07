@@ -121,7 +121,7 @@ const file_v1_grpc_tournament_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId2\x9b\x01\n" +
 	"\x11TournamentService\x12F\n" +
 	"\x0fEnterTournament\x12\x1c.grpc.EnterTournamentRequest\x1a\x15.grpc.MessageResponse\x12>\n" +
-	"\vClaimReward\x12\x18.grpc.ClaimRewardRequest\x1a\x15.grpc.MessageResponseB2Z0github.com/burakmert236/goodswipe/generated/grpcb\x06proto3"
+	"\vClaimReward\x12\x18.grpc.ClaimRewardRequest\x1a\x15.grpc.MessageResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
 
 var (
 	file_v1_grpc_tournament_proto_rawDescOnce sync.Once

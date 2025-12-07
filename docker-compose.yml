@@ -1,16 +1,5 @@
 services:
   # Infrastructure
-  nats:
-    image: nats:2.10
-    container_name: nats
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-    command: ["-js", "-c", "/etc/nats/nats.conf"]
-    volumes:
-      - ./internal/nats_client/nats.conf:/etc/nats/nats.conf
-      - nats_data:/data
-    restart: unless-stopped
   redis:
     image: redis:7-alpine
     ports: 
@@ -66,12 +55,13 @@ services:
   leaderboard-service:
     container_name: leaderboard-service
     build: 
-      context: .
+      context: ./
       dockerfile: ./services/leaderboard-service/Dockerfile
     depends_on:
       - redis
       - dynamodb
     environment:
+      - DEBUG_FLAG=true
       - REDIS_ADDR=redis:6379
       - REDIS_PASSWORD=
       - REDIS_DB=0
@@ -82,8 +72,18 @@ services:
       - REDIS_WRITE_TIMEOUT=3s
     ports:
       - "8010:8010"
+  user-service:
+    container_name: user-service
+    build: 
+      context: ./
+      dockerfile: ./services/user-service/Dockerfile
+    depends_on:
+      - dynamodb
+    environment:
+      - DEBUG_FLAG=true
+    ports:
+      - "9090:9090"
   
 volumes:
   redis_data:
-  nats_data:
   dynamodb_data:

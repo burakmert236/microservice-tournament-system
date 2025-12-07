@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package grpc;
 
-option go_package = "github.com/burakmert236/goodswipe/generated/grpc";
+option go_package = "github.com/burakmert236/goodswipe-common/generated/grpc";
 
 import "v1/grpc/common.proto";
 
 // Services
 service UserService {
-    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-    rpc UpdateProgress(UpdateProgressRequest) returns (MessageResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc UpdateProgress(UpdateProgressRequest) returns (MessageResponse);
 }
 
 // Requests
@@ -18,8 +18,8 @@ message CreateUserRequest {
 }
 
 message UpdateProgressRequest {
-    string user_id = 1;
-    int32 progress_amount = 2;
+  string user_id = 1;
+  int32 progress_amount = 2;
 }
 
 // Responses

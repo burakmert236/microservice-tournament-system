@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	utils "github.com/burakmert236/goodswipe-common/utils"
+	config "github.com/burakmert236/goodswipe-common/config"
 )
 
 type RedisConfig struct {
@@ -19,15 +19,17 @@ type RedisConfig struct {
 }
 
 func Load() *RedisConfig {
+	envLoader := config.NewEnvLoader("REDIS")
+
 	return &RedisConfig{
-		Address:      utils.GetEnv("REDIS_ADDR", "localhost:6379"),
-		Password:     utils.GetEnv("REDIS_PASSWORD", ""),
-		DB:           utils.GetEnvAsInt("REDIS_DB", 0),
-		MaxRetries:   utils.GetEnvAsInt("REDIS_MAX_RETRIES", 3),
-		DialTimeout:  utils.GetEnvAsDuration("REDIS_DIAL_TIMEOUT", 5*time.Second),
-		ReadTimeout:  utils.GetEnvAsDuration("REDIS_READ_TIMEOUT", 3*time.Second),
-		WriteTimeout: utils.GetEnvAsDuration("REDIS_WRITE_TIMEOUT", 3*time.Second),
-		PoolSize:     utils.GetEnvAsInt("REDIS_POOL_SIZE", 10),
-		MinIdleConns: utils.GetEnvAsInt("REDIS_MIN_IDLE_CONNS", 2),
+		Address:      envLoader.GetString("ADDR", "localhost:6379"),
+		Password:     envLoader.GetString("PASSWORD", ""),
+		DB:           envLoader.GetInt("DB", 0),
+		MaxRetries:   envLoader.GetInt("MAX_RETRIES", 3),
+		DialTimeout:  envLoader.GetDuration("DIAL_TIMEOUT", 5*time.Second),
+		ReadTimeout:  envLoader.GetDuration("READ_TIMEOUT", 3*time.Second),
+		WriteTimeout: envLoader.GetDuration("WRITE_TIMEOUT", 3*time.Second),
+		PoolSize:     envLoader.GetInt("POOL_SIZE", 10),
+		MinIdleConns: envLoader.GetInt("MIN_IDLE_CONNS", 2),
 	}
 }

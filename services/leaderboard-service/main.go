@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	repo := cache.Init()
+	cache.Init()
 	utils.WaitForGracefulShutdown()
 }
