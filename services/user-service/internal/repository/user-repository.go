@@ -20,6 +20,7 @@ type UserRepository interface {
 	GetById(ctx context.Context, userId string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) error
+	AddCoin(ctx context.Context, userId string, coin int) error
 }
 
 type userRepo struct {
@@ -123,13 +124,14 @@ func (r *userRepo) UpdateLevelProgress(
 			"PK": &types.AttributeValueMemberS{Value: models.UserPK(userId)},
 			"SK": &types.AttributeValueMemberS{Value: models.ProfileSK()},
 		},
-		UpdateExpression: aws.String("ADD #level :levelInc, coin :coinInc"),
+		UpdateExpression: aws.String("ADD #level :levelInc, coin :coinInc SET updated_at :updatedAt"),
 		ExpressionAttributeNames: map[string]string{
 			"#level": "level",
 		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":levelInc": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", levelIncrease)},
-			":coinInc":  &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", coinReward)},
+			":levelInc":  &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", levelIncrease)},
+			":coinInc":   &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", coinReward)},
+			":updatedAt": &types.AttributeValueMemberN{Value: time.Now().UTC().Format(time.RFC3339)},
 		},
 		ConditionExpression: aws.String("attribute_exists(PK)"),
 		ReturnValues:        types.ReturnValueUpdatedNew,
@@ -144,7 +146,7 @@ func (r *userRepo) UpdateLevelProgress(
 }
 
 // Increase user level by given amount
-func (r *userRepo) UpdateCoin(ctx context.Context, userId string, coin int) error {
+func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) error {
 	input := &dynamodb.UpdateItemInput{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{

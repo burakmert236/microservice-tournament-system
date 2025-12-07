@@ -33,7 +33,7 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *proto.CreateUserReque
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
 	}
 
 	resp := &proto.CreateUserResponse{
@@ -56,7 +56,7 @@ func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgr
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
 	}
 
 	message := &proto.MessageResponse{
