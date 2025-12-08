@@ -48,7 +48,7 @@ func (s *EventSubscriber) subscribeToUserEvents(ctx context.Context) error {
 	cfg := natsjetstream.ConsumerConfig{
 		StreamName:   commonevents.UserEventsStream,
 		ConsumerName: "tournament-service-user-consumer",
-		Durable:      "tournament-service-user",
+		Durable:      "tournament-service-user-consumer",
 		AckPolicy:    "explicit",
 	}
 

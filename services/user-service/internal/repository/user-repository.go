@@ -54,7 +54,6 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	return nil
 }
 
-// Fetch a user with user id
 func (r *userRepo) GetById(ctx context.Context, userId string) (*models.User, error) {
 	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.db.Table()),

@@ -61,7 +61,7 @@ func (s *participationRepo) UpdateParticipationScore(
 		UpdateExpression: aws.String("ADD score :gainedScore SET updated_at = :now"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":gainedScore": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", gainedScore)},
-			":now":         &types.AttributeValueMemberS{Value: time.Now().Format(time.RFC3339)},
+			":now":         &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
 		},
 	})
 

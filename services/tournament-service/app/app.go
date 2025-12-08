@@ -48,16 +48,16 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("failed to init database: %w", err)
 	}
 
+	if err := app.initGRPC(); err != nil {
+		return nil, fmt.Errorf("failed to init gRPC: %w", err)
+	}
+
 	if err := app.initNATS(); err != nil {
 		return nil, fmt.Errorf("failed to init NATS: %w", err)
 	}
 
-	if err := app.initMessaging(); err != nil {
+	if err := app.initMessaging(ctx); err != nil {
 		return nil, fmt.Errorf("failed to init messaging: %w", err)
-	}
-
-	if err := app.initGRPC(); err != nil {
-		return nil, fmt.Errorf("failed to init gRPC: %w", err)
 	}
 
 	if err := app.initScheduler(); err != nil {
@@ -99,9 +99,9 @@ func (a *App) initNATS() error {
 	return nil
 }
 
-func (a *App) initMessaging() error {
+func (a *App) initMessaging(ctx context.Context) error {
 	a.eventSubscriber = events.NewEventSubscriber(a.natsClient, a.tournamentService, a.logger)
-	return nil
+	return a.eventSubscriber.Start(ctx)
 }
 
 func (a *App) initGRPC() error {

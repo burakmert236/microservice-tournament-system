@@ -62,7 +62,7 @@ func (r *tournamentRepo) GetActiveTournament(ctx context.Context) (*models.Tourn
 		FilterExpression:       aws.String("starts_at <= :now AND ends_at >= :now"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":current": &types.AttributeValueMemberS{Value: models.TournamentGSI1PK()},
-			":now":     &types.AttributeValueMemberS{Value: time.Now().Format(time.RFC3339)},
+			":now":     &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
 		},
 		Limit: aws.Int32(1),
 	})

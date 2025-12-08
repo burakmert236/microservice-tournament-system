@@ -57,9 +57,8 @@ func (r *groupRepo) FindAvailableGroup(ctx context.Context, tournamentId string)
 		KeyConditionExpression: aws.String("PK = :pk AND begins_with(SK, :sk)"),
 		FilterExpression:       aws.String("participant_count < group_size"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk":    &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
-			":sk":    &types.AttributeValueMemberS{Value: models.GroupSKPrefix()},
-			":false": &types.AttributeValueMemberBOOL{Value: false},
+			":pk": &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
+			":sk": &types.AttributeValueMemberS{Value: models.GroupSKPrefix()},
 		},
 		Limit: aws.Int32(1),
 	})
@@ -99,9 +98,8 @@ func (r *groupRepo) GetTransactionForAddingParticipant(
 			SET participant_count = if_not_exists(participant_count, :zero) + :inc
 		`),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":inc":   &types.AttributeValueMemberN{Value: "1"},
-			":zero":  &types.AttributeValueMemberN{Value: "0"},
-			":false": &types.AttributeValueMemberBOOL{Value: false},
+			":inc":  &types.AttributeValueMemberN{Value: "1"},
+			":zero": &types.AttributeValueMemberN{Value: "0"},
 		},
 		ConditionExpression: aws.String("attribute_not_exists(participant_count) OR participant_count < group_size"),
 	}
