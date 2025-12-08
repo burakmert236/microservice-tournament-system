@@ -21,12 +21,15 @@ func NewScheduler(
 }
 
 func (s *Scheduler) Start() {
+	ctx := context.Background()
+	s.tournamentScheduler.CreateCurrentTournamentIfNotExists(ctx)
+
 	now := time.Now().UTC()
 	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC)
 	durationUntilMidnight := nextMidnight.Sub(now)
 
 	log.Printf("Next tournament creation scheduled at: %s (in %v)",
-		nextMidnight.Format("2006-01-02 15:04:05 MST"), durationUntilMidnight)
+		nextMidnight.Format(time.RFC3339), durationUntilMidnight)
 
 	timer := time.NewTimer(durationUntilMidnight)
 

@@ -17,7 +17,7 @@ import (
 
 type TournamentRepository interface {
 	Create(ctx context.Context, Tournament *models.Tournament) error
-	GetById(ctx context.Context, TournamentId string) (*models.Tournament, error)
+	GetActiveTournament(ctx context.Context) (*models.Tournament, error)
 	Update(ctx context.Context, Tournament *models.Tournament) error
 }
 
@@ -29,13 +29,14 @@ func NewTournamentRepository(db *database.DynamoDBClient) TournamentRepository {
 	return &tournamentRepo{db: db}
 }
 
-// Create new Tournament
-func (r *tournamentRepo) Create(ctx context.Context, Tournament *models.Tournament) error {
-	Tournament.PK = models.TournamentPK(Tournament.TournamentId)
-	Tournament.SK = models.MetaSK()
-	Tournament.CreatedAt = time.Now()
+func (r *tournamentRepo) Create(ctx context.Context, tournament *models.Tournament) error {
+	tournament.PK = models.TournamentPK(tournament.TournamentId)
+	tournament.SK = models.MetaSK()
+	tournament.GSI1PK = models.TournamentGSI1PK()
+	tournament.GSI1SK = models.StartTimeGSI1SK(tournament.StartsAt.Format(time.RFC3339))
+	tournament.CreatedAt = time.Now()
 
-	item, err := attributevalue.MarshalMap(Tournament)
+	item, err := attributevalue.MarshalMap(tournament)
 	if err != nil {
 		return fmt.Errorf("failed to marshal Tournament: %w", err)
 	}
@@ -53,21 +54,24 @@ func (r *tournamentRepo) Create(ctx context.Context, Tournament *models.Tourname
 	return nil
 }
 
-// Fetch a Tournament with Tournament id
-func (r *tournamentRepo) GetById(ctx context.Context, TournamentId string) (*models.Tournament, error) {
-	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
-		TableName: aws.String(r.db.Table()),
-		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{Value: models.TournamentPK(TournamentId)},
-			"SK": &types.AttributeValueMemberS{Value: models.MetaSK()},
+func (r *tournamentRepo) GetActiveTournament(ctx context.Context) (*models.Tournament, error) {
+	result, err := r.db.Client.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(r.db.Table()),
+		IndexName:              aws.String("GSI1"),
+		KeyConditionExpression: aws.String("GSI1PK = :current"),
+		FilterExpression:       aws.String("starts_at <= :now AND ends_at >= :now"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":current": &types.AttributeValueMemberS{Value: models.TournamentGSI1PK()},
+			":now":     &types.AttributeValueMemberS{Value: time.Now().Format(time.RFC3339)},
 		},
+		Limit: aws.Int32(1),
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Tournament: %w", err)
 	}
 
-	if result.Item == nil {
+	if len(result.Items) <= 0 {
 		return nil, errors.NewAppError(
 			errors.ErrCodeNotFound,
 			"Tournament not found",
@@ -76,14 +80,13 @@ func (r *tournamentRepo) GetById(ctx context.Context, TournamentId string) (*mod
 	}
 
 	var Tournament models.Tournament
-	if err := attributevalue.UnmarshalMap(result.Item, &Tournament); err != nil {
+	if err := attributevalue.UnmarshalMap(result.Items[0], &Tournament); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal Tournament: %w", err)
 	}
 
 	return &Tournament, nil
 }
 
-// Updates a Tournament
 func (r *tournamentRepo) Update(ctx context.Context, Tournament *models.Tournament) error {
 	Tournament.UpdatedAt = time.Now()
 

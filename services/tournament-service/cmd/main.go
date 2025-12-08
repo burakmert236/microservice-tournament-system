@@ -1,18 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/burakmert236/goodswipe-common/config"
-	"github.com/burakmert236/goodswipe-common/database"
 
-	// "github.com/burakmert236/goodswipe-tournament-service/internal/handler"
-	"github.com/burakmert236/goodswipe-tournament-service/internal/repository"
-	"github.com/burakmert236/goodswipe-tournament-service/internal/scheduler"
-	"github.com/burakmert236/goodswipe-tournament-service/internal/service"
+	"github.com/burakmert236/goodswipe-tournament-service/app"
 )
 
 func main() {
@@ -21,54 +18,25 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	log.Printf("Starting tournament service in %s mode", cfg.Server.Environment)
-	log.Printf("Using DynamoDB table: %s", cfg.DynamoDB.TableName)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	dynamoClient, err := database.NewDynamoDBClient(cfg)
+	application, err := app.New(ctx, cfg)
 	if err != nil {
-		log.Fatalf("Failed to create DynamoDB client: %v", err)
+		log.Fatalf("Failed to initialize application: %v", err)
 	}
 
-	tournamentRepo := repository.NewTournamentRepository(dynamoClient)
-	participationRepo := repository.NewParticipationRRepository(dynamoClient)
-	groupRepo := repository.NewGroupRepository(dynamoClient)
-
-	tournamentService := service.NewTournamentService(tournamentRepo, participationRepo, groupRepo)
-
-	tournamentSchedular := scheduler.NewTournamentScheduler(tournamentService)
-	taskScheduler := scheduler.NewScheduler(tournamentSchedular)
-	taskScheduler.Start()
-
-	// tournamentHandler := handler.NewHandler(tournamentService)
-
-	// grpcServer := grpc.NewServer(
-	// 	grpc.UnaryInterceptor(utils.LoggingInterceptor),
-	// )
-
-	// proto.RegisterUserServiceServer(grpcServer, tournamentHandler)
-	// reflection.Register(grpcServer)
-
-	// lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Server.GRPCPort))
-	// if err != nil {
-	// 	log.Fatalf("Failed to listen: %v", err)
-	// }
-
-	// log.Printf("User service listening on port %d", cfg.Server.GRPCPort)
-
-	// go func() {
-	// 	if err := grpcServer.Serve(lis); err != nil {
-	// 		log.Fatalf("Failed to serve: %v", err)
-	// 	}
-	// }()
+	if err := application.Start(); err != nil {
+		log.Fatalf("Failed to start application: %v", err)
+	}
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down server...")
+	log.Println("Shutting down gracefully...")
 
-	// grpcServer.GracefulStop()
-	taskScheduler.Stop()
-
-	log.Println("Server stopped")
+	if err := application.Stop(); err != nil {
+		log.Printf("Error during shutdown: %v", err)
+	}
 }

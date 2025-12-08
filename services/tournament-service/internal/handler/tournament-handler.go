@@ -31,7 +31,7 @@ func (h *TournamentHandler) EnterTournament(ctx context.Context, req *proto.Ente
 		return nil, status.Error(codes.InvalidArgument, "User id is required")
 	}
 
-	err := h.tournamentService.EnterTournament(ctx, req.UserId, req.UserId)
+	err := h.tournamentService.EnterTournament(ctx, req.UserId)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()

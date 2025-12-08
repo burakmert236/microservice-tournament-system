@@ -18,15 +18,28 @@ func NewTournamentScheduler(tournamentService service.TournamentService) *Tourna
 	}
 }
 
-func (ts *TournamentScheduler) CreateTournament(ctx context.Context, now time.Time) error {
+func (ts *TournamentScheduler) CreateTournament(ctx context.Context, startsAt time.Time) error {
 	log.Println("Creating daily tournament...")
 
-	tournament, err := ts.tournamentService.CreateTournament(ctx, now)
+	tournament, err := ts.tournamentService.CreateTournament(ctx, startsAt)
 	if err != nil {
 		log.Printf("Failed to create tournament : %v", err)
 	}
 
 	log.Printf("Created tournament: (ID: %s)", tournament.TournamentId)
+
+	return nil
+}
+
+func (ts *TournamentScheduler) CreateCurrentTournamentIfNotExists(ctx context.Context) error {
+	log.Println("Creating current tournament if not exists...")
+
+	tournament, err := ts.tournamentService.CreateCurrentTournament(ctx)
+	if err != nil {
+		log.Printf("Failed to create tournament : %v", err)
+	}
+
+	log.Printf("Current tournament: (ID: %s)", tournament.TournamentId)
 
 	return nil
 }

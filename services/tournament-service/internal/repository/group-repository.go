@@ -29,8 +29,8 @@ func NewGroupRepository(db *database.DynamoDBClient) GroupRepository {
 }
 
 func (r *groupRepo) CreateGroup(ctx context.Context, group *models.Group) error {
-	group.PK = models.GroupSK(group.GroupId)
-	group.SK = models.TournamentPK(group.TournamentId)
+	group.PK = models.TournamentPK(group.TournamentId)
+	group.SK = models.GroupSK(group.GroupId)
 	group.CreatedAt = time.Now()
 
 	item, err := attributevalue.MarshalMap(group)
@@ -52,19 +52,23 @@ func (r *groupRepo) CreateGroup(ctx context.Context, group *models.Group) error 
 }
 
 func (r *groupRepo) FindAvailableGroup(ctx context.Context, tournamentId string) (*models.Group, error) {
-	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
-		TableName: aws.String(r.db.Table()),
-		Key: map[string]types.AttributeValue{
-			"SK":      &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
-			"is_full": &types.AttributeValueMemberS{Value: "false"},
+	result, err := r.db.Client.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(r.db.Table()),
+		KeyConditionExpression: aws.String("PK = :pk AND begins_with(SK, :sk)"),
+		FilterExpression:       aws.String("participant_count < group_size"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":pk":    &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
+			":sk":    &types.AttributeValueMemberS{Value: models.GroupSKPrefix()},
+			":false": &types.AttributeValueMemberBOOL{Value: false},
 		},
+		Limit: aws.Int32(1),
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group: %w", err)
 	}
 
-	if result.Item == nil {
+	if len(result.Items) <= 0 {
 		return nil, errors.NewAppError(
 			errors.ErrCodeNotFound,
 			"group not found",
@@ -73,7 +77,7 @@ func (r *groupRepo) FindAvailableGroup(ctx context.Context, tournamentId string)
 	}
 
 	var group models.Group
-	if err := attributevalue.UnmarshalMap(result.Item, &group); err != nil {
+	if err := attributevalue.UnmarshalMap(result.Items[0], &group); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal user: %w", err)
 	}
 
@@ -88,18 +92,17 @@ func (r *groupRepo) GetTransactionForAddingParticipant(
 	return types.Update{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{Value: models.GroupSK(groupId)},
-			"SK": &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
+			"PK": &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
+			"SK": &types.AttributeValueMemberS{Value: models.GroupSK(groupId)},
 		},
 		UpdateExpression: aws.String(`
-			SET participant_count = if_not_exists(participant_count, :zero) + :inc,
-			    is_full = if_not_exists(participant_count, :zero) + :inc >= group_size
+			SET participant_count = if_not_exists(participant_count, :zero) + :inc
 		`),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":inc":   &types.AttributeValueMemberN{Value: "1"},
 			":zero":  &types.AttributeValueMemberN{Value: "0"},
 			":false": &types.AttributeValueMemberBOOL{Value: false},
 		},
-		ConditionExpression: aws.String("attribute_not_exists(is_full) OR is_full = :false"),
+		ConditionExpression: aws.String("attribute_not_exists(participant_count) OR participant_count < group_size"),
 	}
 }

@@ -8,7 +8,7 @@ services:
       - "8222:8222"
     command: ["-js", "-c", "/etc/nats/nats.conf"]
     volumes:
-      - ./internal/nats_client/nats.conf:/etc/nats/nats.conf
+      - ./common/natsjetstream/nats.conf:/etc/nats/nats.conf
       - nats_data:/data
     restart: unless-stopped
   redis:
@@ -90,10 +90,23 @@ services:
       dockerfile: ./services/user-service/Dockerfile
     depends_on:
       - dynamodb
+      - nats
     environment:
       - DEBUG_FLAG=true
     ports:
       - "9090:9090"
+  tournament-service:
+    container_name: tournament-service
+    build: 
+      context: ./
+      dockerfile: ./services/tournament-service/Dockerfile
+    depends_on:
+      - dynamodb
+      - nats
+    environment:
+      - DEBUG_FLAG=true
+    ports:
+      - "9091:9091"
   
 volumes:
   nats_data:

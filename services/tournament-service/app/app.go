@@ -14,6 +14,7 @@ import (
 	protogrpc "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-common/natsjetstream"
+	"github.com/burakmert236/goodswipe-tournament-service/internal/events"
 	"github.com/burakmert236/goodswipe-tournament-service/internal/handler"
 	"github.com/burakmert236/goodswipe-tournament-service/internal/repository"
 	"github.com/burakmert236/goodswipe-tournament-service/internal/scheduler"
@@ -99,8 +100,7 @@ func (a *App) initNATS() error {
 }
 
 func (a *App) initMessaging() error {
-	a.eventPublisher = events.NewEventPublisher(a.natsClient, a.logger)
-
+	a.eventSubscriber = events.NewEventSubscriber(a.natsClient, a.tournamentService, a.logger)
 	return nil
 }
 
@@ -108,11 +108,13 @@ func (a *App) initGRPC() error {
 	tournamentRepo := repository.NewTournamentRepository(a.db)
 	participationRepo := repository.NewParticipationRRepository(a.db)
 	groupRepo := repository.NewGroupRepository(a.db)
+	transactionRepo := database.NewTransactionRepository(a.db)
 
 	a.tournamentService = service.NewTournamentService(
 		tournamentRepo,
 		participationRepo,
 		groupRepo,
+		transactionRepo,
 		a.logger,
 	)
 
@@ -143,6 +145,9 @@ func (a *App) Start() error {
 		if err != nil {
 			a.logger.Fatal("Failed to listen: %v", err)
 		}
+
+		go a.scheduler.Start()
+		a.logger.Info("Tournament generation scheduler is started")
 
 		a.logger.Info(fmt.Sprintf("gRPC server listening on %d", a.cfg.Server.GRPCPort))
 		if err := a.grpcServer.Serve(lis); err != nil {

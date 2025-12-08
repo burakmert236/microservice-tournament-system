@@ -10,12 +10,8 @@ type Config struct {
 }
 
 type ConsumerConfig struct {
-	StreamName    string
-	ConsumerName  string
-	Durable       string
-	FilterSubject string
-	AckPolicy     string
-	AckWait       time.Duration
-	MaxDeliver    int
-	MaxAckPending int
+	StreamName   string
+	ConsumerName string
+	Durable      string
+	AckPolicy    string
 }

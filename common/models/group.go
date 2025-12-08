@@ -21,5 +21,9 @@ type Group struct {
 // Key handlers
 
 func GroupSK(groupID string) string {
-	return fmt.Sprintf("GROUP#%s", groupID)
+	return fmt.Sprintf("%s%s", GroupSKPrefix(), groupID)
+}
+
+func GroupSKPrefix() string {
+	return "GROUP#"
 }

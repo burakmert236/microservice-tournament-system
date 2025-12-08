@@ -24,16 +24,16 @@ type Tournament struct {
 }
 
 // Key handlers
-func TournamentPK(tournamentID string) string {
-	return fmt.Sprintf("TOURNAMENT#%s", tournamentID)
+func TournamentPK(tournamentId string) string {
+	return fmt.Sprintf("TOURNAMENT#%s", tournamentId)
 }
 
 func MetaSK() string {
 	return "META"
 }
 
-func StatusGSI1PK(status string) string {
-	return fmt.Sprintf("STATUS#%s", status)
+func TournamentGSI1PK() string {
+	return "CURRENT_TOURNAMENT"
 }
 
 func StartTimeGSI1SK(startTime string) string {

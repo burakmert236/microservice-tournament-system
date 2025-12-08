@@ -21,12 +21,8 @@ func NewSubscriber(client *Client) *Subscriber {
 
 func (s *Subscriber) Subscribe(ctx context.Context, cfg ConsumerConfig, handler MessageHandler) error {
 	consumerConfig := jetstream.ConsumerConfig{
-		Name:          cfg.ConsumerName,
-		Durable:       cfg.Durable,
-		FilterSubject: cfg.FilterSubject,
-		AckWait:       cfg.AckWait,
-		MaxDeliver:    cfg.MaxDeliver,
-		MaxAckPending: cfg.MaxAckPending,
+		Name:    cfg.ConsumerName,
+		Durable: cfg.Durable,
 	}
 
 	switch cfg.AckPolicy {

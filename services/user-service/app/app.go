@@ -11,6 +11,7 @@ import (
 
 	"github.com/burakmert236/goodswipe-common/config"
 	"github.com/burakmert236/goodswipe-common/database"
+	commonevents "github.com/burakmert236/goodswipe-common/events"
 	protogrpc "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-common/natsjetstream"
@@ -18,6 +19,7 @@ import (
 	"github.com/burakmert236/goodswipe-user-service/internal/handler"
 	"github.com/burakmert236/goodswipe-user-service/internal/repository"
 	"github.com/burakmert236/goodswipe-user-service/internal/service"
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 type App struct {
@@ -45,7 +47,7 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("failed to init database: %w", err)
 	}
 
-	if err := app.initNATS(); err != nil {
+	if err := app.initNATS(ctx); err != nil {
 		return nil, fmt.Errorf("failed to init NATS: %w", err)
 	}
 
@@ -75,7 +77,7 @@ func (a *App) initDatabase() error {
 	return nil
 }
 
-func (a *App) initNATS() error {
+func (a *App) initNATS(ctx context.Context) error {
 	natsClient, err := natsjetstream.NewClient(&natsjetstream.Config{
 		URL:           a.cfg.NATS.URL,
 		MaxReconnect:  a.cfg.NATS.MaxReconnect,
@@ -87,6 +89,21 @@ func (a *App) initNATS() error {
 	}
 
 	a.natsClient = natsClient
+
+	stream := jetstream.StreamConfig{
+		Name:     commonevents.UserEventsStream,
+		Subjects: []string{commonevents.UserEventsWildcard},
+	}
+
+	if _, err := a.natsClient.JetStream().CreateOrUpdateStream(ctx, stream); err != nil {
+		a.logger.Error("Failed to create stream",
+			"error", err,
+			"stream", stream.Name,
+		)
+		return err
+	}
+	a.logger.Info("Stream ready", "stream", stream.Name)
+
 	a.cleanup = append(a.cleanup, natsClient.Close)
 
 	return nil
