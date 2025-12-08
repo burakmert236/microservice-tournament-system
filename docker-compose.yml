@@ -1,5 +1,16 @@
 services:
   # Infrastructure
+  nats:
+    image: nats:2.10
+    container_name: nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js", "-c", "/etc/nats/nats.conf"]
+    volumes:
+      - ./internal/nats_client/nats.conf:/etc/nats/nats.conf
+      - nats_data:/data
+    restart: unless-stopped
   redis:
     image: redis:7-alpine
     ports: 
@@ -85,5 +96,6 @@ services:
       - "9090:9090"
   
 volumes:
+  nats_data:
   redis_data:
   dynamodb_data:

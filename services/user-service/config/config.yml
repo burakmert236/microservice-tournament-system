@@ -11,3 +11,9 @@ server:
   grpcPort: 9090
   environment: "development"
   logLevel: "debug"
+
+nats:
+  url: "http://nats:4222"
+  maxReconnect: 10
+  reconnectWaitSeconds: 2
+  timeoutSeconds: 5

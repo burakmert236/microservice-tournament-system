@@ -1,6 +1,6 @@
 aws:
   region: "us-east-1"
-  endpoint: "http://localhost:8000"
+  endpoint: "http://dynamodb:8000"
 
 dynamodb:
   tableName: "GoodSwipe"
@@ -12,5 +12,8 @@ server:
   environment: "development"
   logLevel: "debug"
 
-scheduler:
-  tournamentDurationInHour: 24
+nats:
+  url: "http://nats:4222"
+  maxReconnect: 10
+  reconnectWaitSeconds: 2
+  timeoutSeconds: 5

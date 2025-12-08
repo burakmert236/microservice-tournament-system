@@ -8,6 +8,7 @@ type Config struct {
 	AWS      AWSConfig
 	DynamoDB DynamoDBConfig
 	Server   ServerConfig
+	NATS     NATSConfig
 }
 
 type AWSConfig struct {
@@ -29,6 +30,13 @@ type ServerConfig struct {
 	GRPCPort    int
 	Environment string
 	LogLevel    string
+}
+
+type NATSConfig struct {
+	URL                  string
+	MaxReconnect         int
+	ReconnectWaitSeconds int
+	TimeoutSeconds       int
 }
 
 func Load(configPath string) (*Config, error) {

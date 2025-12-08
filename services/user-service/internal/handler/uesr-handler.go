@@ -9,17 +9,20 @@ import (
 
 	"github.com/burakmert236/goodswipe-common/errors"
 	proto "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
+	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-user-service/internal/service"
 )
 
 type UserHandler struct {
 	proto.UnimplementedUserServiceServer
 	UserService service.UserService
+	logger      *logger.Logger
 }
 
-func NewUserHandler(UserService service.UserService) *UserHandler {
+func NewUserHandler(UserService service.UserService, logger *logger.Logger) *UserHandler {
 	return &UserHandler{
 		UserService: UserService,
+		logger:      logger,
 	}
 }
 

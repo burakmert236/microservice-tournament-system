@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/burakmert236/goodswipe-common/errors"
+	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-common/models"
+	"github.com/burakmert236/goodswipe-user-service/internal/events"
 	"github.com/burakmert236/goodswipe-user-service/internal/repository"
 	"github.com/google/uuid"
 )
@@ -16,12 +18,20 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo  repository.UserRepository
+	publisher *events.EventPublisher
+	logger    *logger.Logger
 }
 
-func NewUserService(userRepo repository.UserRepository) UserService {
+func NewUserService(
+	userRepo repository.UserRepository,
+	publisher *events.EventPublisher,
+	logger *logger.Logger,
+) UserService {
 	return &userService{
-		userRepo: userRepo,
+		userRepo:  userRepo,
+		publisher: publisher,
+		logger:    logger,
 	}
 }
 
@@ -44,12 +54,21 @@ func (s *userService) CreateUser(ctx context.Context, displayName string) (*mode
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
+	s.logger.Info("User created: %s", user.UserId)
+
 	return user, nil
 }
 
 func (s *userService) UpdateProgress(ctx context.Context, userId string, levelIncrease int) error {
 	reward := levelIncrease * s.getCoinRewardPerLevelUpgrade()
-	return s.userRepo.UpdateLevelProgress(ctx, userId, levelIncrease, reward)
+	newLevel, err := s.userRepo.UpdateLevelProgress(ctx, userId, levelIncrease, reward)
+
+	if err != nil {
+		s.logger.Error("failed to update level progress: %s", err.Error())
+		return err
+	}
+
+	return s.publisher.PublishUserLevelUp(ctx, userId, levelIncrease, newLevel)
 }
 
 func (s *userService) getCoinRewardPerLevelUpgrade() int {

@@ -8,7 +8,16 @@ require (
 	github.com/burakmert236/goodswipe-common v0.0.0
 )
 
-require golang.org/x/net v0.46.1-0.20251013234738-63d1a5100f82 // indirect
+require (
+	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/nats-io/nats.go v1.47.0 // indirect
+	github.com/nats-io/nkeys v0.4.11 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.27.1 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/net v0.46.1-0.20251013234738-63d1a5100f82 // indirect
+)
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.40.1

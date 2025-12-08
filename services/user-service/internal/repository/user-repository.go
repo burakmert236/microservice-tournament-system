@@ -19,7 +19,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	GetById(ctx context.Context, userId string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
-	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) error
+	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) (int, error)
 	AddCoin(ctx context.Context, userId string, coin int) error
 }
 
@@ -113,9 +113,9 @@ func (r *userRepo) UpdateLevelProgress(
 	userId string,
 	levelIncrease int,
 	coinReward int,
-) error {
+) (int, error) {
 	if levelIncrease == 0 {
-		return nil
+		return 0, nil
 	}
 
 	input := &dynamodb.UpdateItemInput{
@@ -137,12 +137,17 @@ func (r *userRepo) UpdateLevelProgress(
 		ReturnValues:        types.ReturnValueUpdatedNew,
 	}
 
-	_, err := r.db.Client.UpdateItem(ctx, input)
+	result, err := r.db.Client.UpdateItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("failed to update level progress: %w", err)
+		return 0, fmt.Errorf("failed to update level progress: %w", err)
 	}
 
-	return nil
+	var user models.User
+	if err := attributevalue.UnmarshalMap(result.Attributes, &user); err != nil {
+		return 0, fmt.Errorf("failed to unmarshal user: %w", err)
+	}
+
+	return user.Level, nil
 }
 
 // Increase user level by given amount

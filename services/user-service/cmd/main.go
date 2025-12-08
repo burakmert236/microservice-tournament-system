@@ -1,23 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
 	"github.com/burakmert236/goodswipe-common/config"
-	"github.com/burakmert236/goodswipe-common/database"
-	proto "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
-	utils "github.com/burakmert236/goodswipe-common/utils"
-	"github.com/burakmert236/goodswipe-user-service/internal/handler"
-	"github.com/burakmert236/goodswipe-user-service/internal/repository"
-	"github.com/burakmert236/goodswipe-user-service/internal/service"
+	"github.com/burakmert236/goodswipe-user-service/app"
 )
 
 func main() {
@@ -26,45 +17,25 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	log.Printf("Starting user service in %s mode", cfg.Server.Environment)
-	log.Printf("Using DynamoDB table: %s", cfg.DynamoDB.TableName)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	dynamoClient, err := database.NewDynamoDBClient(cfg)
+	application, err := app.New(ctx, cfg)
 	if err != nil {
-		log.Fatalf("Failed to create DynamoDB client: %v", err)
+		log.Fatalf("Failed to initialize application: %v", err)
 	}
 
-	userRepo := repository.NewUserRepository(dynamoClient)
-
-	userService := service.NewUserService(userRepo)
-
-	userHandler := handler.NewUserHandler(userService)
-
-	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(utils.LoggingInterceptor),
-	)
-
-	proto.RegisterUserServiceServer(grpcServer, userHandler)
-	reflection.Register(grpcServer)
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Server.GRPCPort))
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+	if err := application.Start(); err != nil {
+		log.Fatalf("Failed to start application: %v", err)
 	}
-
-	log.Printf("User service listening on port %d", cfg.Server.GRPCPort)
-
-	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve: %v", err)
-		}
-	}()
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down server...")
-	grpcServer.GracefulStop()
-	log.Println("Server stopped")
+	log.Println("Shutting down gracefully...")
+
+	if err := application.Stop(); err != nil {
+		log.Printf("Error during shutdown: %v", err)
+	}
 }

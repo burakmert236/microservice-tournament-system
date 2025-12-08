@@ -22,7 +22,7 @@ func NewScheduler(
 
 func (s *Scheduler) Start() {
 	now := time.Now().UTC()
-	nextMidnight := time.Date(now.Year(), now.Month(), now.Day(), 18, 2, 0, 0, time.UTC)
+	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC)
 	durationUntilMidnight := nextMidnight.Sub(now)
 
 	log.Printf("Next tournament creation scheduled at: %s (in %v)",
@@ -53,6 +53,7 @@ func (s *Scheduler) Start() {
 	}
 }
 
-func (s *Scheduler) Stop() {
+func (s *Scheduler) Stop() error {
 	close(s.stopChan)
+	return nil
 }
