@@ -21,6 +21,10 @@ type UserRepository interface {
 	Update(ctx context.Context, user *models.User) error
 	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) (int, error)
 	AddCoin(ctx context.Context, userId string, coin int) error
+
+	// Transactions operations
+	GetCoinDeductionTransaction(ctx context.Context, userId string, amount int) types.Update
+	GetCoinAdditionTransaction(ctx context.Context, userId string, amount int) types.Update
 }
 
 type userRepo struct {
@@ -34,7 +38,7 @@ func NewUserRepository(db *database.DynamoDBClient) UserRepository {
 func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	user.PK = models.UserPK(user.UserId)
 	user.SK = models.ProfileSK()
-	user.CreatedAt = time.Now()
+	user.CreatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
@@ -147,18 +151,14 @@ func (r *userRepo) UpdateLevelProgress(
 }
 
 func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) error {
+	coinAdditionTransaction := r.GetCoinAdditionTransaction(ctx, userId, coin)
+
 	input := &dynamodb.UpdateItemInput{
-		TableName: aws.String(r.db.Table()),
-		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{Value: models.UserPK(userId)},
-			"SK": &types.AttributeValueMemberS{Value: models.ProfileSK()},
-		},
-		UpdateExpression: aws.String("ADD coin :coinInc SET updated_at = :updatedAt"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":coinInc":   &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", coin)},
-			":updatedAt": &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
-		},
-		ReturnValues: types.ReturnValueUpdatedNew,
+		TableName:                 aws.String(r.db.Table()),
+		Key:                       coinAdditionTransaction.Key,
+		UpdateExpression:          coinAdditionTransaction.UpdateExpression,
+		ExpressionAttributeValues: coinAdditionTransaction.ExpressionAttributeValues,
+		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
 
 	_, err := r.db.Client.UpdateItem(ctx, input)
@@ -167,4 +167,41 @@ func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) error {
 	}
 
 	return nil
+}
+
+// Transaction Operations
+
+func (r *userRepo) GetCoinDeductionTransaction(ctx context.Context, userId string, amount int) types.Update {
+	now := time.Now().UTC()
+
+	return types.Update{
+		TableName: aws.String(r.db.Table()),
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{Value: models.UserPK(userId)},
+			"SK": &types.AttributeValueMemberS{Value: models.ProfileSK()},
+		},
+		UpdateExpression:    aws.String("SET coin = coin - :amount, updated_at = :now"),
+		ConditionExpression: aws.String("coin >= :amount"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":amount": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", amount)},
+			":now":    &types.AttributeValueMemberS{Value: now.Format(time.RFC3339)},
+		},
+	}
+}
+
+func (r *userRepo) GetCoinAdditionTransaction(ctx context.Context, userId string, amount int) types.Update {
+	now := time.Now().UTC()
+
+	return types.Update{
+		TableName: aws.String(r.db.Table()),
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{Value: models.UserPK(userId)},
+			"SK": &types.AttributeValueMemberS{Value: models.ProfileSK()},
+		},
+		UpdateExpression: aws.String("SET coin = coin + :amount, updated_at = :now"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":amount": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", amount)},
+			":now":    &types.AttributeValueMemberS{Value: now.Format(time.RFC3339)},
+		},
+	}
 }

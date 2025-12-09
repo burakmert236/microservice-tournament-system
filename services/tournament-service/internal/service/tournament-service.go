@@ -8,10 +8,12 @@ import (
 
 	"github.com/burakmert236/goodswipe-common/database"
 	appErrors "github.com/burakmert236/goodswipe-common/errors"
+	protogrpc "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-common/models"
 	"github.com/burakmert236/goodswipe-tournament-service/internal/repository"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/status"
 )
 
 type TournamentService interface {
@@ -26,6 +28,7 @@ type tournamentService struct {
 	participantRepo repository.ParticipationRepository
 	groupRepo       repository.GroupRepository
 	transactionRepo database.TransactionRepository
+	userClient      protogrpc.UserServiceClient
 	logger          *logger.Logger
 }
 
@@ -34,6 +37,7 @@ func NewTournamentService(
 	participantRepo repository.ParticipationRepository,
 	groupRepo repository.GroupRepository,
 	transactionRepo database.TransactionRepository,
+	userClient protogrpc.UserServiceClient,
 	logger *logger.Logger,
 ) TournamentService {
 	return &tournamentService{
@@ -41,6 +45,7 @@ func NewTournamentService(
 		participantRepo: participantRepo,
 		groupRepo:       groupRepo,
 		transactionRepo: transactionRepo,
+		userClient:      userClient,
 		logger:          logger,
 	}
 }
@@ -53,7 +58,7 @@ func (s *tournamentService) CreateTournament(ctx context.Context, startsAt time.
 	s.setDefaultValuesForTournament(tournament)
 
 	if err := s.tournamentRepo.Create(ctx, tournament); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create tournament %w", err)
 	}
 
 	return tournament, nil
@@ -75,7 +80,7 @@ func (s *tournamentService) CreateCurrentTournament(ctx context.Context) (*model
 	s.setDefaultValuesForTournament(tournament)
 
 	if err := s.tournamentRepo.Create(ctx, tournament); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create tournament %w", err)
 	}
 
 	return tournament, nil
@@ -85,38 +90,36 @@ func (s *tournamentService) EnterTournament(
 	ctx context.Context,
 	userId string,
 ) error {
+	reservationId := uuid.New().String()
+
+	// Get active tournament
 	tournament, err := s.tournamentRepo.GetActiveTournament(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get active tournament %w", err)
 	}
 	s.logger.Info(fmt.Sprintf("current tournament is fetched: %s", tournament.TournamentId))
 
-	if tournament.LastAllowedParticipationDate.Compare(time.Now()) > 0 {
-		return fmt.Errorf("tournament last participation date is over:  %s",
-			tournament.LastAllowedParticipationDate.Format(time.RFC3339))
-	}
-
-	group, err := s.groupRepo.FindAvailableGroup(ctx, tournament.TournamentId)
-
+	// Check existing particpation
+	existingParticipation, err := s.participantRepo.GetByUserAndTournament(ctx, userId, tournament.TournamentId)
 	if err != nil {
-		var appErr *appErrors.AppError
-		if errors.As(err, &appErr) {
-			if appErr.Code == appErrors.ErrCodeNotFound {
-				group = &models.Group{
-					GroupId:      uuid.New().String(),
-					TournamentId: tournament.TournamentId,
-					GroupSize:    tournament.GroupSize,
-				}
-				s.setDefaultValueForGroup(group)
-				if createGroupErr := s.groupRepo.CreateGroup(ctx, group); createGroupErr != nil {
-					return createGroupErr
-				}
-			}
-		} else {
-			return fmt.Errorf("unexpected error: %w", err)
-		}
+		return fmt.Errorf("failed to get existing participation %w", err)
+	}
+	if existingParticipation != nil {
+		return nil
 	}
 
+	// Handle validation and reservation
+	if err := s.handleBeforeTournamentEntryOperations(ctx, userId, reservationId, tournament); err != nil {
+		return err
+	}
+
+	// Get available group
+	group, err := s.findOrCreateAvailableGroup(ctx, tournament)
+	if err != nil {
+		return fmt.Errorf("failed to get available group %w", err)
+	}
+
+	// Build transaction for participation
 	participation := &models.Participation{
 		UserId:       userId,
 		TournamentId: tournament.TournamentId,
@@ -125,7 +128,7 @@ func (s *tournamentService) EnterTournament(
 	s.setDefaultValuesForParticipation(participation)
 	putParticipationTransaction, err := s.participantRepo.GetTransactionForAddingParticipation(ctx, participation)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get transaction for adding new participation %w", err)
 	}
 
 	updateGroupTransaction := s.groupRepo.GetTransactionForAddingParticipant(ctx, group.GroupId, tournament.TournamentId)
@@ -134,7 +137,8 @@ func (s *tournamentService) EnterTournament(
 	transactionBuilder.AddPut(putParticipationTransaction)
 	transactionBuilder.AddUpdate(updateGroupTransaction)
 
-	return s.transactionRepo.Execute(ctx, transactionBuilder)
+	transactionErr := s.transactionRepo.Execute(ctx, transactionBuilder)
+	return s.handleAfterTournamentEntryOperations(ctx, transactionErr, reservationId)
 }
 
 func (s *tournamentService) UpdateParticipationScore(
@@ -144,18 +148,22 @@ func (s *tournamentService) UpdateParticipationScore(
 ) error {
 	tournament, err := s.tournamentRepo.GetActiveTournament(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get active tournament %w", err)
 	}
 
 	scoreReward := s.getLevelUpdateScoreReward(tournament, levelIncrease)
 	return s.participantRepo.UpdateParticipationScore(ctx, userId, tournament.TournamentId, scoreReward)
 }
 
+// Private methods
+
 func (s *tournamentService) setDefaultValuesForTournament(tournament *models.Tournament) {
 	tournament.EndsAt = tournament.StartsAt.Add(24 * time.Hour).Add(-1 * time.Minute)
 	tournament.LastAllowedParticipationDate = tournament.StartsAt.Add(12 * time.Hour)
+	tournament.UserLevelLimit = 10
 	tournament.GroupSize = s.getDefaultGroupSize()
 	tournament.ScoreRewardPerLevelUpgrade = 1
+	tournament.EnteranceFee = 500
 	tournament.RewardingMap = map[string]int{
 		"1":    5000,
 		"2":    3000,
@@ -183,4 +191,104 @@ func (s *tournamentService) getLevelUpdateScoreReward(
 	levelIncrease int,
 ) int {
 	return levelIncrease * tournament.ScoreRewardPerLevelUpgrade
+}
+
+func (s *tournamentService) validateDate(tournament *models.Tournament) error {
+	if tournament.LastAllowedParticipationDate.Compare(time.Now()) > 0 {
+		return fmt.Errorf("tournament last participation date is over:  %s",
+			tournament.LastAllowedParticipationDate.Format(time.RFC3339))
+	}
+
+	return nil
+}
+
+func (s *tournamentService) validateUserLevel(userLevel int, tournament *models.Tournament) error {
+	if userLevel < tournament.UserLevelLimit {
+		return fmt.Errorf("user level must be at least: %d", tournament.UserLevelLimit)
+	}
+
+	return nil
+}
+
+func (s *tournamentService) findOrCreateAvailableGroup(ctx context.Context, tournament *models.Tournament) (*models.Group, error) {
+	group, err := s.groupRepo.FindAvailableGroup(ctx, tournament.TournamentId)
+
+	if err != nil {
+		var appErr *appErrors.AppError
+		if errors.As(err, &appErr) {
+			if appErr.Code == appErrors.ErrCodeNotFound {
+				group = &models.Group{
+					GroupId:      uuid.New().String(),
+					TournamentId: tournament.TournamentId,
+					GroupSize:    tournament.GroupSize,
+				}
+				s.setDefaultValueForGroup(group)
+				if createGroupErr := s.groupRepo.CreateGroup(ctx, group); createGroupErr != nil {
+					return nil, fmt.Errorf("failed to create group %w", createGroupErr)
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("unexpected error: %w", err)
+		}
+	}
+
+	return group, nil
+}
+
+func (s *tournamentService) handleBeforeTournamentEntryOperations(
+	ctx context.Context,
+	userId, reservationId string,
+	tournament *models.Tournament,
+) error {
+	if err := s.validateDate(tournament); err != nil {
+		return err
+	}
+
+	userResponse, err := s.userClient.GetById(ctx, &protogrpc.GetUserByIdRequest{
+		UserId: userId,
+	})
+
+	if err := s.validateUserLevel(int(userResponse.Level), tournament); err != nil {
+		return err
+	}
+
+	_, err = s.userClient.ReserveCoins(ctx, &protogrpc.ReserveCoinsRequest{
+		UserId:        userId,
+		Amount:        int64(tournament.EnteranceFee),
+		ReservationId: reservationId,
+	})
+
+	if err != nil {
+		st, _ := status.FromError(err)
+		return fmt.Errorf("failed to reserve coins: %s", st.Message())
+	}
+
+	return nil
+}
+
+func (s *tournamentService) handleAfterTournamentEntryOperations(ctx context.Context, trsansactionErr error, reservationId string) error {
+	if trsansactionErr != nil {
+		s.logger.Warn("Failed to add participant, rolling back reservation %s", reservationId)
+
+		_, rollbackErr := s.userClient.RollbackReservation(ctx, &protogrpc.RollbackReservationRequest{
+			ReservationId: reservationId,
+		})
+
+		if rollbackErr != nil {
+			s.logger.Warn("CRITICAL: Failed to rollback reservation %s: %v", reservationId, rollbackErr)
+		}
+
+		return fmt.Errorf("failed to join tournament: %w", trsansactionErr)
+	}
+
+	s.logger.Info("Confirming reservation %s", reservationId)
+	_, err := s.userClient.ConfirmReservation(ctx, &protogrpc.ConfirmReservationRequest{
+		ReservationId: reservationId,
+	})
+
+	if err != nil {
+		s.logger.Warn("Failed to confirm reservation %s: %v", reservationId, err)
+	}
+
+	return err
 }

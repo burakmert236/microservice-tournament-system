@@ -12,6 +12,8 @@ type Tournament struct {
 	LastAllowedParticipationDate time.Time      `dynamodbav:"last_allowed_participation_date"`
 	ScoreRewardPerLevelUpgrade   int            `dynamodbav:"score_reward_per_level_upgrade"`
 	GroupSize                    int            `dynamodbav:"group_size"`
+	UserLevelLimit               int            `dynamodbav:"user_level_limit"`
+	EnteranceFee                 int            `dynamodbav:"enterance_fee"`
 	RewardingMap                 map[string]int `dynamodbav:"rewarding_map"`
 	CreatedAt                    time.Time      `dynamodbav:"created_at"`
 	UpdatedAt                    time.Time      `dynamodbav:"updated_at"`

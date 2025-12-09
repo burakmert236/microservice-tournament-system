@@ -118,6 +118,198 @@ func (x *UpdateProgressRequest) GetProgressAmount() int32 {
 	return 0
 }
 
+type GetUserByIdRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserByIdRequest) Reset() {
+	*x = GetUserByIdRequest{}
+	mi := &file_v1_grpc_user_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserByIdRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserByIdRequest) ProtoMessage() {}
+
+func (x *GetUserByIdRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_user_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserByIdRequest.ProtoReflect.Descriptor instead.
+func (*GetUserByIdRequest) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_user_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetUserByIdRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type ReserveCoinsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Amount        int64                  `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	ReservationId string                 `protobuf:"bytes,3,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReserveCoinsRequest) Reset() {
+	*x = ReserveCoinsRequest{}
+	mi := &file_v1_grpc_user_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReserveCoinsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReserveCoinsRequest) ProtoMessage() {}
+
+func (x *ReserveCoinsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_user_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReserveCoinsRequest.ProtoReflect.Descriptor instead.
+func (*ReserveCoinsRequest) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_user_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ReserveCoinsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ReserveCoinsRequest) GetAmount() int64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *ReserveCoinsRequest) GetReservationId() string {
+	if x != nil {
+		return x.ReservationId
+	}
+	return ""
+}
+
+type ConfirmReservationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmReservationRequest) Reset() {
+	*x = ConfirmReservationRequest{}
+	mi := &file_v1_grpc_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmReservationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmReservationRequest) ProtoMessage() {}
+
+func (x *ConfirmReservationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_user_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmReservationRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmReservationRequest) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_user_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ConfirmReservationRequest) GetReservationId() string {
+	if x != nil {
+		return x.ReservationId
+	}
+	return ""
+}
+
+type RollbackReservationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RollbackReservationRequest) Reset() {
+	*x = RollbackReservationRequest{}
+	mi := &file_v1_grpc_user_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RollbackReservationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RollbackReservationRequest) ProtoMessage() {}
+
+func (x *RollbackReservationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_user_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RollbackReservationRequest.ProtoReflect.Descriptor instead.
+func (*RollbackReservationRequest) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_user_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RollbackReservationRequest) GetReservationId() string {
+	if x != nil {
+		return x.ReservationId
+	}
+	return ""
+}
+
 // Responses
 type CreateUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -128,7 +320,7 @@ type CreateUserResponse struct {
 
 func (x *CreateUserResponse) Reset() {
 	*x = CreateUserResponse{}
-	mi := &file_v1_grpc_user_proto_msgTypes[2]
+	mi := &file_v1_grpc_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -140,7 +332,7 @@ func (x *CreateUserResponse) String() string {
 func (*CreateUserResponse) ProtoMessage() {}
 
 func (x *CreateUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_grpc_user_proto_msgTypes[2]
+	mi := &file_v1_grpc_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -153,7 +345,7 @@ func (x *CreateUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUserResponse.ProtoReflect.Descriptor instead.
 func (*CreateUserResponse) Descriptor() ([]byte, []int) {
-	return file_v1_grpc_user_proto_rawDescGZIP(), []int{2}
+	return file_v1_grpc_user_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateUserResponse) GetUserId() string {
@@ -161,6 +353,82 @@ func (x *CreateUserResponse) GetUserId() string {
 		return x.UserId
 	}
 	return ""
+}
+
+type GetUserByIdResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Level         int32                  `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
+	Coin          int32                  `protobuf:"varint,4,opt,name=coin,proto3" json:"coin,omitempty"`
+	TotalScore    int32                  `protobuf:"varint,5,opt,name=total_score,json=totalScore,proto3" json:"total_score,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserByIdResponse) Reset() {
+	*x = GetUserByIdResponse{}
+	mi := &file_v1_grpc_user_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserByIdResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserByIdResponse) ProtoMessage() {}
+
+func (x *GetUserByIdResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_user_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserByIdResponse.ProtoReflect.Descriptor instead.
+func (*GetUserByIdResponse) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_user_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetUserByIdResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetUserByIdResponse) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *GetUserByIdResponse) GetLevel() int32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
+func (x *GetUserByIdResponse) GetCoin() int32 {
+	if x != nil {
+		return x.Coin
+	}
+	return 0
+}
+
+func (x *GetUserByIdResponse) GetTotalScore() int32 {
+	if x != nil {
+		return x.TotalScore
+	}
+	return 0
 }
 
 var File_v1_grpc_user_proto protoreflect.FileDescriptor
@@ -173,12 +441,33 @@ const file_v1_grpc_user_proto_rawDesc = "" +
 	"\x15UpdateProgressRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12'\n" +
 	"\x0fprogress_amount\x18\x02 \x01(\x05R\x0eprogressAmount\"-\n" +
+	"\x12GetUserByIdRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"m\n" +
+	"\x13ReserveCoinsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\x03R\x06amount\x12%\n" +
+	"\x0ereservation_id\x18\x03 \x01(\tR\rreservationId\"B\n" +
+	"\x19ConfirmReservationRequest\x12%\n" +
+	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"C\n" +
+	"\x1aRollbackReservationRequest\x12%\n" +
+	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"-\n" +
 	"\x12CreateUserResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId2\x94\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x9c\x01\n" +
+	"\x13GetUserByIdResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x14\n" +
+	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x12\n" +
+	"\x04coin\x18\x04 \x01(\x05R\x04coin\x12\x1f\n" +
+	"\vtotal_score\x18\x05 \x01(\x05R\n" +
+	"totalScore2\xb4\x03\n" +
 	"\vUserService\x12?\n" +
 	"\n" +
 	"CreateUser\x12\x17.grpc.CreateUserRequest\x1a\x18.grpc.CreateUserResponse\x12D\n" +
-	"\x0eUpdateProgress\x12\x1b.grpc.UpdateProgressRequest\x1a\x15.grpc.MessageResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
+	"\x0eUpdateProgress\x12\x1b.grpc.UpdateProgressRequest\x1a\x15.grpc.MessageResponse\x12>\n" +
+	"\aGetById\x12\x18.grpc.GetUserByIdRequest\x1a\x19.grpc.GetUserByIdResponse\x12@\n" +
+	"\fReserveCoins\x12\x19.grpc.ReserveCoinsRequest\x1a\x15.grpc.MessageResponse\x12L\n" +
+	"\x12ConfirmReservation\x12\x1f.grpc.ConfirmReservationRequest\x1a\x15.grpc.MessageResponse\x12N\n" +
+	"\x13RollbackReservation\x12 .grpc.RollbackReservationRequest\x1a\x15.grpc.MessageResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
 
 var (
 	file_v1_grpc_user_proto_rawDescOnce sync.Once
@@ -192,20 +481,33 @@ func file_v1_grpc_user_proto_rawDescGZIP() []byte {
 	return file_v1_grpc_user_proto_rawDescData
 }
 
-var file_v1_grpc_user_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_v1_grpc_user_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_v1_grpc_user_proto_goTypes = []any{
-	(*CreateUserRequest)(nil),     // 0: grpc.CreateUserRequest
-	(*UpdateProgressRequest)(nil), // 1: grpc.UpdateProgressRequest
-	(*CreateUserResponse)(nil),    // 2: grpc.CreateUserResponse
-	(*MessageResponse)(nil),       // 3: grpc.MessageResponse
+	(*CreateUserRequest)(nil),          // 0: grpc.CreateUserRequest
+	(*UpdateProgressRequest)(nil),      // 1: grpc.UpdateProgressRequest
+	(*GetUserByIdRequest)(nil),         // 2: grpc.GetUserByIdRequest
+	(*ReserveCoinsRequest)(nil),        // 3: grpc.ReserveCoinsRequest
+	(*ConfirmReservationRequest)(nil),  // 4: grpc.ConfirmReservationRequest
+	(*RollbackReservationRequest)(nil), // 5: grpc.RollbackReservationRequest
+	(*CreateUserResponse)(nil),         // 6: grpc.CreateUserResponse
+	(*GetUserByIdResponse)(nil),        // 7: grpc.GetUserByIdResponse
+	(*MessageResponse)(nil),            // 8: grpc.MessageResponse
 }
 var file_v1_grpc_user_proto_depIdxs = []int32{
 	0, // 0: grpc.UserService.CreateUser:input_type -> grpc.CreateUserRequest
 	1, // 1: grpc.UserService.UpdateProgress:input_type -> grpc.UpdateProgressRequest
-	2, // 2: grpc.UserService.CreateUser:output_type -> grpc.CreateUserResponse
-	3, // 3: grpc.UserService.UpdateProgress:output_type -> grpc.MessageResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	2, // 2: grpc.UserService.GetById:input_type -> grpc.GetUserByIdRequest
+	3, // 3: grpc.UserService.ReserveCoins:input_type -> grpc.ReserveCoinsRequest
+	4, // 4: grpc.UserService.ConfirmReservation:input_type -> grpc.ConfirmReservationRequest
+	5, // 5: grpc.UserService.RollbackReservation:input_type -> grpc.RollbackReservationRequest
+	6, // 6: grpc.UserService.CreateUser:output_type -> grpc.CreateUserResponse
+	8, // 7: grpc.UserService.UpdateProgress:output_type -> grpc.MessageResponse
+	7, // 8: grpc.UserService.GetById:output_type -> grpc.GetUserByIdResponse
+	8, // 9: grpc.UserService.ReserveCoins:output_type -> grpc.MessageResponse
+	8, // 10: grpc.UserService.ConfirmReservation:output_type -> grpc.MessageResponse
+	8, // 11: grpc.UserService.RollbackReservation:output_type -> grpc.MessageResponse
+	6, // [6:12] is the sub-list for method output_type
+	0, // [0:6] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -223,7 +525,7 @@ func file_v1_grpc_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_grpc_user_proto_rawDesc), len(file_v1_grpc_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

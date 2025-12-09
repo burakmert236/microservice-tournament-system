@@ -27,9 +27,10 @@ type DynamoDBConfig struct {
 }
 
 type ServerConfig struct {
-	GRPCPort    int
-	Environment string
-	LogLevel    string
+	GRPCPort           int
+	Environment        string
+	LogLevel           string
+	UserServiceAddress string
 }
 
 type NATSConfig struct {

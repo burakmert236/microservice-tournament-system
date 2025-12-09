@@ -14,6 +14,7 @@ import (
 )
 
 type ParticipationRepository interface {
+	GetByUserAndTournament(ctx context.Context, userId, tournamentId string) (*models.Participation, error)
 	GetTransactionForAddingParticipation(ctx context.Context, participation *models.Participation) (types.Put, error)
 	UpdateParticipationScore(ctx context.Context, userId string, tournamentId string, gainedScore int) error
 }
@@ -24,6 +25,13 @@ type participationRepo struct {
 
 func NewParticipationRRepository(db *database.DynamoDBClient) ParticipationRepository {
 	return &participationRepo{db: db}
+}
+
+func (s *participationRepo) GetByUserAndTournament(
+	ctx context.Context,
+	userId, tournamentId string,
+) (*models.Participation, error) {
+	return nil, nil
 }
 
 func (s *participationRepo) GetTransactionForAddingParticipation(

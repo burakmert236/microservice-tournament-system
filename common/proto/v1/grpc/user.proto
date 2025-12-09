@@ -10,6 +10,12 @@ import "v1/grpc/common.proto";
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc UpdateProgress(UpdateProgressRequest) returns (MessageResponse);
+  rpc GetById(GetUserByIdRequest) returns (GetUserByIdResponse);
+
+  // Reservation methods for tournament entry
+  rpc ReserveCoins(ReserveCoinsRequest) returns (MessageResponse);
+  rpc ConfirmReservation(ConfirmReservationRequest) returns (MessageResponse);
+  rpc RollbackReservation(RollbackReservationRequest) returns (MessageResponse);
 }
 
 // Requests
@@ -22,7 +28,33 @@ message UpdateProgressRequest {
   int32 progress_amount = 2;
 }
 
+message GetUserByIdRequest {
+  string user_id = 1;
+}
+
+message ReserveCoinsRequest {
+  string user_id = 1;
+  int64 amount = 2;
+  string reservation_id = 3;
+}
+
+message ConfirmReservationRequest {
+  string reservation_id = 1;
+}
+
+message RollbackReservationRequest {
+  string reservation_id = 1;
+}
+
 // Responses
 message CreateUserResponse {
   string user_id = 1;
+}
+
+message GetUserByIdResponse {
+  string user_id = 1;
+	string display_name = 2;
+	int32 level = 3;
+  int32 coin = 4;
+  int32 total_score = 5;
 }

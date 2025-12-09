@@ -103,6 +103,7 @@ services:
     depends_on:
       - dynamodb
       - nats
+      - user-service
     environment:
       - DEBUG_FLAG=true
     ports:

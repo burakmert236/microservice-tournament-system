@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/burakmert236/goodswipe-common/config"
@@ -105,6 +106,17 @@ func (a *App) initMessaging(ctx context.Context) error {
 }
 
 func (a *App) initGRPC() error {
+	userServiceAddr := a.cfg.Server.UserServiceAddress
+	userConn, err := grpc.NewClient(userServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		a.logger.Fatal("Failed to connect to User Service: %v", err)
+	}
+
+	a.cleanup = append(a.cleanup, userConn.Close)
+
+	userClient := protogrpc.NewUserServiceClient(userConn)
+	a.logger.Info("Connected to User Service at %s", userServiceAddr)
+
 	tournamentRepo := repository.NewTournamentRepository(a.db)
 	participationRepo := repository.NewParticipationRRepository(a.db)
 	groupRepo := repository.NewGroupRepository(a.db)
@@ -115,6 +127,7 @@ func (a *App) initGRPC() error {
 		participationRepo,
 		groupRepo,
 		transactionRepo,
+		userClient,
 		a.logger,
 	)
 

@@ -117,9 +117,13 @@ func (a *App) initMessaging() error {
 
 func (a *App) initGRPC() error {
 	userRepo := repository.NewUserRepository(a.db)
+	reservationRepo := repository.NewReservationRepository(a.db)
+	transactionRepo := database.NewTransactionRepository(a.db)
 
 	userService := service.NewUserService(
 		userRepo,
+		reservationRepo,
+		transactionRepo,
 		a.eventPublisher,
 		a.logger,
 	)

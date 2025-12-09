@@ -15,13 +15,13 @@ import (
 
 type UserHandler struct {
 	proto.UnimplementedUserServiceServer
-	UserService service.UserService
+	userService service.UserService
 	logger      *logger.Logger
 }
 
 func NewUserHandler(UserService service.UserService, logger *logger.Logger) *UserHandler {
 	return &UserHandler{
-		UserService: UserService,
+		userService: UserService,
 		logger:      logger,
 	}
 }
@@ -31,7 +31,7 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *proto.CreateUserReque
 		return nil, status.Error(codes.InvalidArgument, "Display name is required")
 	}
 
-	user, err := h.UserService.CreateUser(ctx, req.DisplayName)
+	user, err := h.userService.CreateUser(ctx, req.DisplayName)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()
@@ -54,7 +54,7 @@ func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgr
 		return nil, status.Error(codes.InvalidArgument, "Progress amount must be a positive number")
 	}
 
-	err := h.UserService.UpdateProgress(ctx, req.UserId, int(req.ProgressAmount))
+	err := h.userService.UpdateProgress(ctx, req.UserId, int(req.ProgressAmount))
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()
@@ -68,4 +68,70 @@ func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgr
 	}
 
 	return message, nil
+}
+
+func (h *UserHandler) GetById(ctx context.Context, req *proto.GetUserByIdRequest) (*proto.GetUserByIdResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "User id is required")
+	}
+
+	user, err := h.userService.GetById(ctx, req.UserId)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			return nil, appErr.ToGRPCStatus()
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+	}
+
+	message := &proto.GetUserByIdResponse{
+		UserId:      user.UserId,
+		DisplayName: user.DisplayName,
+		Level:       int32(user.Level),
+		Coin:        int32(user.Coin),
+		TotalScore:  int32(user.TotalScore),
+	}
+
+	return message, nil
+}
+
+func (h *UserHandler) ReserveCoins(ctx context.Context, req *proto.ReserveCoinsRequest) (*proto.MessageResponse, error) {
+	err := h.userService.ReserveCoins(ctx, req.UserId, int(req.Amount), req.ReservationId)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			return &proto.MessageResponse{
+				IsSuccess: false,
+				Message:   appErr.Message,
+			}, appErr.ToGRPCStatus()
+		}
+		return nil, status.Error(codes.Internal, "failed to reserve coins")
+	}
+
+	return &proto.MessageResponse{
+		IsSuccess: true,
+		Message:   "coins reserved successfully",
+	}, nil
+}
+
+func (h *UserHandler) ConfirmReservation(ctx context.Context, req *proto.ConfirmReservationRequest) (*proto.MessageResponse, error) {
+	err := h.userService.ConfirmReservation(ctx, req.ReservationId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to confirm reservation")
+	}
+
+	return &proto.MessageResponse{
+		IsSuccess: true,
+		Message:   "reservation confirmed successfully",
+	}, nil
+}
+
+func (h *UserHandler) RollbackReservation(ctx context.Context, req *proto.RollbackReservationRequest) (*proto.MessageResponse, error) {
+	err := h.userService.RollbackReservation(ctx, req.ReservationId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to rollback reservation")
+	}
+
+	return &proto.MessageResponse{
+		IsSuccess: true,
+		Message:   "reservation rollbacked successfully",
+	}, nil
 }

@@ -19,8 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_CreateUser_FullMethodName     = "/grpc.UserService/CreateUser"
-	UserService_UpdateProgress_FullMethodName = "/grpc.UserService/UpdateProgress"
+	UserService_CreateUser_FullMethodName          = "/grpc.UserService/CreateUser"
+	UserService_UpdateProgress_FullMethodName      = "/grpc.UserService/UpdateProgress"
+	UserService_GetById_FullMethodName             = "/grpc.UserService/GetById"
+	UserService_ReserveCoins_FullMethodName        = "/grpc.UserService/ReserveCoins"
+	UserService_ConfirmReservation_FullMethodName  = "/grpc.UserService/ConfirmReservation"
+	UserService_RollbackReservation_FullMethodName = "/grpc.UserService/RollbackReservation"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -31,6 +35,11 @@ const (
 type UserServiceClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*MessageResponse, error)
+	GetById(ctx context.Context, in *GetUserByIdRequest, opts ...grpc.CallOption) (*GetUserByIdResponse, error)
+	// Reservation methods for tournament entry
+	ReserveCoins(ctx context.Context, in *ReserveCoinsRequest, opts ...grpc.CallOption) (*MessageResponse, error)
+	ConfirmReservation(ctx context.Context, in *ConfirmReservationRequest, opts ...grpc.CallOption) (*MessageResponse, error)
+	RollbackReservation(ctx context.Context, in *RollbackReservationRequest, opts ...grpc.CallOption) (*MessageResponse, error)
 }
 
 type userServiceClient struct {
@@ -61,6 +70,46 @@ func (c *userServiceClient) UpdateProgress(ctx context.Context, in *UpdateProgre
 	return out, nil
 }
 
+func (c *userServiceClient) GetById(ctx context.Context, in *GetUserByIdRequest, opts ...grpc.CallOption) (*GetUserByIdResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserByIdResponse)
+	err := c.cc.Invoke(ctx, UserService_GetById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ReserveCoins(ctx context.Context, in *ReserveCoinsRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MessageResponse)
+	err := c.cc.Invoke(ctx, UserService_ReserveCoins_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ConfirmReservation(ctx context.Context, in *ConfirmReservationRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MessageResponse)
+	err := c.cc.Invoke(ctx, UserService_ConfirmReservation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RollbackReservation(ctx context.Context, in *RollbackReservationRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MessageResponse)
+	err := c.cc.Invoke(ctx, UserService_RollbackReservation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -69,6 +118,11 @@ func (c *userServiceClient) UpdateProgress(ctx context.Context, in *UpdateProgre
 type UserServiceServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	UpdateProgress(context.Context, *UpdateProgressRequest) (*MessageResponse, error)
+	GetById(context.Context, *GetUserByIdRequest) (*GetUserByIdResponse, error)
+	// Reservation methods for tournament entry
+	ReserveCoins(context.Context, *ReserveCoinsRequest) (*MessageResponse, error)
+	ConfirmReservation(context.Context, *ConfirmReservationRequest) (*MessageResponse, error)
+	RollbackReservation(context.Context, *RollbackReservationRequest) (*MessageResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -84,6 +138,18 @@ func (UnimplementedUserServiceServer) CreateUser(context.Context, *CreateUserReq
 }
 func (UnimplementedUserServiceServer) UpdateProgress(context.Context, *UpdateProgressRequest) (*MessageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProgress not implemented")
+}
+func (UnimplementedUserServiceServer) GetById(context.Context, *GetUserByIdRequest) (*GetUserByIdResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetById not implemented")
+}
+func (UnimplementedUserServiceServer) ReserveCoins(context.Context, *ReserveCoinsRequest) (*MessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReserveCoins not implemented")
+}
+func (UnimplementedUserServiceServer) ConfirmReservation(context.Context, *ConfirmReservationRequest) (*MessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmReservation not implemented")
+}
+func (UnimplementedUserServiceServer) RollbackReservation(context.Context, *RollbackReservationRequest) (*MessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RollbackReservation not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -142,6 +208,78 @@ func _UserService_UpdateProgress_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserByIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetById(ctx, req.(*GetUserByIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ReserveCoins_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveCoinsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReserveCoins(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReserveCoins_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReserveCoins(ctx, req.(*ReserveCoinsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ConfirmReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmReservationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ConfirmReservation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ConfirmReservation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ConfirmReservation(ctx, req.(*ConfirmReservationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RollbackReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RollbackReservationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RollbackReservation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RollbackReservation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RollbackReservation(ctx, req.(*RollbackReservationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -156,6 +294,22 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateProgress",
 			Handler:    _UserService_UpdateProgress_Handler,
+		},
+		{
+			MethodName: "GetById",
+			Handler:    _UserService_GetById_Handler,
+		},
+		{
+			MethodName: "ReserveCoins",
+			Handler:    _UserService_ReserveCoins_Handler,
+		},
+		{
+			MethodName: "ConfirmReservation",
+			Handler:    _UserService_ConfirmReservation_Handler,
+		},
+		{
+			MethodName: "RollbackReservation",
+			Handler:    _UserService_RollbackReservation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

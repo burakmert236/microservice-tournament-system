@@ -17,6 +17,8 @@ import (
 type GroupRepository interface {
 	CreateGroup(ctx context.Context, group *models.Group) error
 	FindAvailableGroup(ctx context.Context, tournamentId string) (*models.Group, error)
+
+	// Transaction operations
 	GetTransactionForAddingParticipant(ctx context.Context, groupId string, tournamentId string) types.Update
 }
 
@@ -82,6 +84,8 @@ func (r *groupRepo) FindAvailableGroup(ctx context.Context, tournamentId string)
 
 	return &group, nil
 }
+
+// Transaction Operations
 
 func (r *groupRepo) GetTransactionForAddingParticipant(
 	ctx context.Context,
