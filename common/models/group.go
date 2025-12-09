@@ -10,7 +10,6 @@ type Group struct {
 	TournamentId     string    `dynamodbav:"tournament_id"`
 	GroupSize        int       `dynamodbav:"group_size"`
 	ParticipantCount int       `dynamodbav:"participant_count"`
-	IsFull           bool      `dynamodbav:"is_full"`
 	CreatedAt        time.Time `dynamodbav:"created_at"`
 	UpdatedAt        time.Time `dynamodbav:"updated_at"`
 

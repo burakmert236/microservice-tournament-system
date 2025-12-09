@@ -134,7 +134,7 @@ func (r *userRepo) UpdateLevelProgress(
 			":updatedAt": &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
 		},
 		ConditionExpression: aws.String("attribute_exists(PK)"),
-		ReturnValues:        types.ReturnValueUpdatedNew,
+		ReturnValues:        types.ReturnValueAllNew,
 	}
 
 	result, err := r.db.Client.UpdateItem(ctx, input)
@@ -158,7 +158,6 @@ func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) error {
 		Key:                       coinAdditionTransaction.Key,
 		UpdateExpression:          coinAdditionTransaction.UpdateExpression,
 		ExpressionAttributeValues: coinAdditionTransaction.ExpressionAttributeValues,
-		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
 
 	_, err := r.db.Client.UpdateItem(ctx, input)

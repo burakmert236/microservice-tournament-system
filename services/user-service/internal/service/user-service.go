@@ -68,7 +68,10 @@ func (s *userService) CreateUser(ctx context.Context, displayName string) (*mode
 	}
 
 	s.logger.Info("User created: %s", user.UserId)
-	return user, nil
+
+	err := s.publisher.PublishUserCreated(ctx, user.UserId)
+
+	return user, err
 }
 
 func (s *userService) UpdateProgress(ctx context.Context, userId string, levelIncrease int) error {

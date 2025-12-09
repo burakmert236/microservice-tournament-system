@@ -4,6 +4,11 @@ package events;
 
 option go_package = "github.com/burakmert236/goodswipe/generated/events";
 
+message UserCreated {
+    string userId = 1;
+    int64 timeStamp = 2;
+} 
+
 message UserLevelUp {
     string userId = 1;
     int32 levelIncrease = 2;

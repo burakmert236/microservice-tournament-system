@@ -14,9 +14,15 @@ service LeaderboardService {
 // Requests
 message GetGlobalLeaderboardRequest {}
 
-message GetTournamentLeaderboardRequest {}
+message GetTournamentLeaderboardRequest {
+    string userId = 1;
+    string tournamentId = 2;
+}
 
-message GetTournamentRankRequest {}
+message GetTournamentRankRequest {
+    string userId = 1;
+    string tournamentId = 2;
+}
 
 // Responses
 message GetGlobalLeaderboardResponse {

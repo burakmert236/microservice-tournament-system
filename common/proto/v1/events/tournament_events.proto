@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package events;
+
+option go_package = "github.com/burakmert236/goodswipe/generated/events";
+
+message TournamentParticipationScoreUpdated {
+    string userId = 1;
+    string groupId = 2;
+    string tournamentId = 3;
+    int32 newScore = 4;
+    int64 timeStamp = 5;
+}
+
+message TournamentEntered {
+    string userId = 1;
+    string groupId = 2;
+    string tournamentId = 3;
+    int64 timeStamp = 4;
+}

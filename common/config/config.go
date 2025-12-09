@@ -9,6 +9,7 @@ type Config struct {
 	DynamoDB DynamoDBConfig
 	Server   ServerConfig
 	NATS     NATSConfig
+	Redis    RedisConfig
 }
 
 type AWSConfig struct {
@@ -38,6 +39,11 @@ type NATSConfig struct {
 	MaxReconnect         int
 	ReconnectWaitSeconds int
 	TimeoutSeconds       int
+}
+
+type RedisConfig struct {
+	Address  string
+	Password string
 }
 
 func Load(configPath string) (*Config, error) {

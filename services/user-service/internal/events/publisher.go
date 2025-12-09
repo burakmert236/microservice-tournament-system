@@ -23,6 +23,21 @@ func NewEventPublisher(client *natsjetstream.Client, logger *logger.Logger) *Eve
 	}
 }
 
+func (p *EventPublisher) PublishUserCreated(ctx context.Context, userId string) error {
+	event := &protoevents.UserCreated{
+		UserId:    userId,
+		TimeStamp: time.Now().Unix(),
+	}
+
+	if err := p.publisher.PublishProto(ctx, commonevents.UserCreated, event); err != nil {
+		p.logger.Error(fmt.Sprintf("Failed to publish user created event: %v", err))
+		return fmt.Errorf("failed to publish event: %w", err)
+	}
+
+	p.logger.Info(fmt.Sprintf("Published user created event for user: %s", userId))
+	return nil
+}
+
 func (p *EventPublisher) PublishUserLevelUp(ctx context.Context, userId string, levelIncrease int, newLevel int) error {
 	event := &protoevents.UserLevelUp{
 		UserId:        userId,

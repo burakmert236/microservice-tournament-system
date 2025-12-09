@@ -1,14 +1,5 @@
-aws:
-  region: "us-east-1"
-  endpoint: "http://localhost:8000"
-
-dynamodb:
-  tableName: "GoodSwipe"
-  maxRetries: 3
-  useLocalEndpoint: true
-
 server:
-  grpcPort: 9090
+  grpcPort: 9092
   environment: "development"
   logLevel: "debug"
 
@@ -17,3 +8,7 @@ nats:
   maxReconnect: 10
   reconnectWaitSeconds: 2
   timeoutSeconds: 5
+
+redis:
+  address: "localhost:6379"
+  password: ""

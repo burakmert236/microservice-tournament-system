@@ -60,6 +60,8 @@ func (*GetGlobalLeaderboardRequest) Descriptor() ([]byte, []int) {
 
 type GetTournamentLeaderboardRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	TournamentId  string                 `protobuf:"bytes,2,opt,name=tournamentId,proto3" json:"tournamentId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -94,8 +96,24 @@ func (*GetTournamentLeaderboardRequest) Descriptor() ([]byte, []int) {
 	return file_v1_grpc_leaderboard_proto_rawDescGZIP(), []int{1}
 }
 
+func (x *GetTournamentLeaderboardRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetTournamentLeaderboardRequest) GetTournamentId() string {
+	if x != nil {
+		return x.TournamentId
+	}
+	return ""
+}
+
 type GetTournamentRankRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	TournamentId  string                 `protobuf:"bytes,2,opt,name=tournamentId,proto3" json:"tournamentId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -128,6 +146,20 @@ func (x *GetTournamentRankRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetTournamentRankRequest.ProtoReflect.Descriptor instead.
 func (*GetTournamentRankRequest) Descriptor() ([]byte, []int) {
 	return file_v1_grpc_leaderboard_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetTournamentRankRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetTournamentRankRequest) GetTournamentId() string {
+	if x != nil {
+		return x.TournamentId
+	}
+	return ""
 }
 
 // Responses
@@ -329,9 +361,13 @@ var File_v1_grpc_leaderboard_proto protoreflect.FileDescriptor
 const file_v1_grpc_leaderboard_proto_rawDesc = "" +
 	"\n" +
 	"\x19v1/grpc/leaderboard.proto\x12\x04grpc\"\x1d\n" +
-	"\x1bGetGlobalLeaderboardRequest\"!\n" +
-	"\x1fGetTournamentLeaderboardRequest\"\x1a\n" +
-	"\x18GetTournamentRankRequest\"D\n" +
+	"\x1bGetGlobalLeaderboardRequest\"]\n" +
+	"\x1fGetTournamentLeaderboardRequest\x12\x16\n" +
+	"\x06userId\x18\x01 \x01(\tR\x06userId\x12\"\n" +
+	"\ftournamentId\x18\x02 \x01(\tR\ftournamentId\"V\n" +
+	"\x18GetTournamentRankRequest\x12\x16\n" +
+	"\x06userId\x18\x01 \x01(\tR\x06userId\x12\"\n" +
+	"\ftournamentId\x18\x02 \x01(\tR\ftournamentId\"D\n" +
 	"\x1cGetGlobalLeaderboardResponse\x12$\n" +
 	"\x05users\x18\x01 \x03(\v2\x0e.grpc.UserInfoR\x05users\"H\n" +
 	" GetTournamentLeaderboardResponse\x12$\n" +

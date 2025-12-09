@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY services/leaderboard-service/ .
 
-RUN go build -o leaderboard-service
+RUN go build -o leaderboard-service ./cmd
 
 # Run stage
 FROM alpine:3.19
@@ -22,5 +22,5 @@ WORKDIR /app
 
 COPY --from=builder /app/services/leaderboard-service .
 
-EXPOSE 8010
+EXPOSE 9092
 CMD ["/app/leaderboard-service"]

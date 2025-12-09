@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 type ParticipationRepository interface {
 	GetByUserAndTournament(ctx context.Context, userId, tournamentId string) (*models.Participation, error)
 	GetTransactionForAddingParticipation(ctx context.Context, participation *models.Participation) (types.Put, error)
-	UpdateParticipationScore(ctx context.Context, userId string, tournamentId string, gainedScore int) error
+	UpdateParticipationScore(ctx context.Context, userId string, tournamentId string, gainedScore int) (*models.Participation, error)
 }
 
 type participationRepo struct {
@@ -31,7 +32,28 @@ func (s *participationRepo) GetByUserAndTournament(
 	ctx context.Context,
 	userId, tournamentId string,
 ) (*models.Participation, error) {
-	return nil, nil
+	result, err := s.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(s.db.Table()),
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{Value: models.UserPK(userId)},
+			"SK": &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
+		},
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get participation by user and tournament: %w", err)
+	}
+
+	if result.Item == nil {
+		return nil, nil
+	}
+
+	var participation models.Participation
+	if err := attributevalue.UnmarshalMap(result.Item, &participation); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal participation: %w", err)
+	}
+
+	return &participation, nil
 }
 
 func (s *participationRepo) GetTransactionForAddingParticipation(
@@ -59,8 +81,8 @@ func (s *participationRepo) UpdateParticipationScore(
 	userId string,
 	tournamentId string,
 	gainedScore int,
-) error {
-	_, err := s.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+) (*models.Participation, error) {
+	result, err := s.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(s.db.Table()),
 		Key: map[string]types.AttributeValue{
 			"PK": &types.AttributeValueMemberS{Value: models.UserPK(userId)},
@@ -71,7 +93,22 @@ func (s *participationRepo) UpdateParticipationScore(
 			":gainedScore": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", gainedScore)},
 			":now":         &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
 		},
+		ConditionExpression: aws.String("attribute_exists(PK)"),
+		ReturnValues:        types.ReturnValueAllNew,
 	})
 
-	return err
+	if err != nil {
+		var ccf *types.ConditionalCheckFailedException
+		if errors.As(err, &ccf) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to update participation score: %w", err)
+	}
+
+	var participation models.Participation
+	if err := attributevalue.UnmarshalMap(result.Attributes, &participation); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal participation: %w", err)
+	}
+
+	return &participation, nil
 }

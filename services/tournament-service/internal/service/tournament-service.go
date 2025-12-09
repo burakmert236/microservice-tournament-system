@@ -11,6 +11,7 @@ import (
 	protogrpc "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-common/models"
+	"github.com/burakmert236/goodswipe-tournament-service/internal/events/publisher"
 	"github.com/burakmert236/goodswipe-tournament-service/internal/repository"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/status"
@@ -24,29 +25,32 @@ type TournamentService interface {
 }
 
 type tournamentService struct {
-	tournamentRepo  repository.TournamentRepository
-	participantRepo repository.ParticipationRepository
-	groupRepo       repository.GroupRepository
-	transactionRepo database.TransactionRepository
-	userClient      protogrpc.UserServiceClient
-	logger          *logger.Logger
+	tournamentRepo    repository.TournamentRepository
+	participationRepo repository.ParticipationRepository
+	groupRepo         repository.GroupRepository
+	transactionRepo   database.TransactionRepository
+	userClient        protogrpc.UserServiceClient
+	eventPublisher    *publisher.EventPublisher
+	logger            *logger.Logger
 }
 
 func NewTournamentService(
 	tournamentRepo repository.TournamentRepository,
-	participantRepo repository.ParticipationRepository,
+	participationRepo repository.ParticipationRepository,
 	groupRepo repository.GroupRepository,
 	transactionRepo database.TransactionRepository,
+	eventPublisher *publisher.EventPublisher,
 	userClient protogrpc.UserServiceClient,
 	logger *logger.Logger,
 ) TournamentService {
 	return &tournamentService{
-		tournamentRepo:  tournamentRepo,
-		participantRepo: participantRepo,
-		groupRepo:       groupRepo,
-		transactionRepo: transactionRepo,
-		userClient:      userClient,
-		logger:          logger,
+		tournamentRepo:    tournamentRepo,
+		participationRepo: participationRepo,
+		groupRepo:         groupRepo,
+		transactionRepo:   transactionRepo,
+		eventPublisher:    eventPublisher,
+		userClient:        userClient,
+		logger:            logger,
 	}
 }
 
@@ -100,7 +104,7 @@ func (s *tournamentService) EnterTournament(
 	s.logger.Info(fmt.Sprintf("current tournament is fetched: %s", tournament.TournamentId))
 
 	// Check existing particpation
-	existingParticipation, err := s.participantRepo.GetByUserAndTournament(ctx, userId, tournament.TournamentId)
+	existingParticipation, err := s.participationRepo.GetByUserAndTournament(ctx, userId, tournament.TournamentId)
 	if err != nil {
 		return fmt.Errorf("failed to get existing participation %w", err)
 	}
@@ -126,7 +130,7 @@ func (s *tournamentService) EnterTournament(
 		GroupId:      group.GroupId,
 	}
 	s.setDefaultValuesForParticipation(participation)
-	putParticipationTransaction, err := s.participantRepo.GetTransactionForAddingParticipation(ctx, participation)
+	putParticipationTransaction, err := s.participationRepo.GetTransactionForAddingParticipation(ctx, participation)
 	if err != nil {
 		return fmt.Errorf("failed to get transaction for adding new participation %w", err)
 	}
@@ -138,7 +142,16 @@ func (s *tournamentService) EnterTournament(
 	transactionBuilder.AddUpdate(updateGroupTransaction)
 
 	transactionErr := s.transactionRepo.Execute(ctx, transactionBuilder)
-	return s.handleAfterTournamentEntryOperations(ctx, transactionErr, reservationId)
+
+	if err = s.handleAfterTournamentEntryOperations(ctx, transactionErr, reservationId); err != nil {
+		return fmt.Errorf("failed to handle after tournament entry operations %w", err)
+	}
+
+	if err = s.eventPublisher.PublishTournamentEntered(ctx, userId, group.GroupId, tournament.TournamentId); err != nil {
+		return fmt.Errorf("failed to publish tournament entered event %w", err)
+	}
+
+	return nil
 }
 
 func (s *tournamentService) UpdateParticipationScore(
@@ -152,7 +165,24 @@ func (s *tournamentService) UpdateParticipationScore(
 	}
 
 	scoreReward := s.getLevelUpdateScoreReward(tournament, levelIncrease)
-	return s.participantRepo.UpdateParticipationScore(ctx, userId, tournament.TournamentId, scoreReward)
+	participation, err := s.participationRepo.UpdateParticipationScore(ctx, userId, tournament.TournamentId, scoreReward)
+	if err != nil {
+		return fmt.Errorf("failed to update participation score %w", err)
+	}
+
+	if participation != nil {
+		s.logger.Info("Participation score updated. %d", participation)
+
+		s.eventPublisher.PublishTournamentParticipationScoreUpdated(
+			ctx,
+			userId,
+			participation.GroupId,
+			participation.TournamentId,
+			participation.Score,
+		)
+	}
+
+	return nil
 }
 
 // Private methods
@@ -174,11 +204,11 @@ func (s *tournamentService) setDefaultValuesForTournament(tournament *models.Tou
 
 func (s *tournamentService) setDefaultValueForGroup(group *models.Group) {
 	group.GroupSize = s.getDefaultGroupSize()
-	group.IsFull = false
+	group.ParticipantCount = 0
 }
 
 func (s *tournamentService) getDefaultGroupSize() int {
-	return 35
+	return 2
 }
 
 func (s *tournamentService) setDefaultValuesForParticipation(participation *models.Participation) {
@@ -247,6 +277,9 @@ func (s *tournamentService) handleBeforeTournamentEntryOperations(
 	userResponse, err := s.userClient.GetById(ctx, &protogrpc.GetUserByIdRequest{
 		UserId: userId,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to get user grpc call: %s", err.Error())
+	}
 
 	if err := s.validateUserLevel(int(userResponse.Level), tournament); err != nil {
 		return err
