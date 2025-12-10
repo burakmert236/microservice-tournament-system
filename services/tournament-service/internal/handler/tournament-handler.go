@@ -47,6 +47,23 @@ func (h *TournamentHandler) EnterTournament(ctx context.Context, req *proto.Ente
 	return resp, nil
 }
 
-func (h *TournamentHandler) UpdateProgress(ctx context.Context, req *proto.ClaimRewardRequest) (*proto.MessageResponse, error) {
-	return nil, nil
+func (h *TournamentHandler) ClaimReward(ctx context.Context, req *proto.ClaimRewardRequest) (*proto.MessageResponse, error) {
+	if req.UserId == "" || req.TournamentId == "" {
+		return nil, status.Error(codes.InvalidArgument, "User id and tournament id is required")
+	}
+
+	err := h.tournamentService.ClaimReward(ctx, req.UserId, req.TournamentId)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			return nil, appErr.ToGRPCStatus()
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+	}
+
+	resp := &proto.MessageResponse{
+		IsSuccess: true,
+		Message:   "Tournament reward is claimed succesfully",
+	}
+
+	return resp, nil
 }

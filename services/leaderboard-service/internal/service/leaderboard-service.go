@@ -12,7 +12,7 @@ type LeaderboardService interface {
 	// Write Operations
 	AddGlobalUser(ctx context.Context, userId, displayName string) error
 	AddUserToTournament(ctx context.Context, userId, displayName, groupId, tournamentId string) error
-	UpdateTournamentScore(ctx context.Context, userId, displayName, tournamentId string, score int) error
+	UpdateTournamentScore(ctx context.Context, userId, tournamentId string, score int) error
 
 	// Read Operations
 	GetGlobalLeaderboard(ctx context.Context) ([]repository.LeaderboardEntry, error)
@@ -68,12 +68,12 @@ func (s *leaderboardService) AddUserToTournament(
 
 func (s *leaderboardService) UpdateTournamentScore(
 	ctx context.Context,
-	userId, displayName, tournamentId string,
+	userId, tournamentId string,
 	score int,
 ) error {
 	s.logger.Info("Updating tournament score")
 
-	err := s.leaderboardRepo.UpdateTournamentScore(ctx, userId, displayName, tournamentId, score)
+	err := s.leaderboardRepo.UpdateTournamentScore(ctx, userId, tournamentId, score)
 	if err != nil {
 		s.logger.Error("Failed to update tournament score", "error", err)
 		return fmt.Errorf("failed to update tournament score: %w", err)
@@ -144,5 +144,5 @@ func (s *leaderboardService) GetTournamentRank(
 
 	s.logger.Info("Tournament rank retrieved")
 
-	return int(rank), nil
+	return int(rank + 1), nil
 }

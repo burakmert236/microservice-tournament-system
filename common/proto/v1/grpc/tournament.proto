@@ -19,4 +19,5 @@ message EnterTournamentRequest {
 
 message ClaimRewardRequest {
     string user_id = 1;
+    string tournament_id = 2;
 }

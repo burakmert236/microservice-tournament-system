@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/burakmert236/goodswipe-common/database"
@@ -22,6 +24,7 @@ type TournamentService interface {
 	CreateCurrentTournament(ctx context.Context) (*models.Tournament, error)
 	EnterTournament(ctx context.Context, userId string) error
 	UpdateParticipationScore(ctx context.Context, userId string, levelIncrease int) error
+	ClaimReward(ctx context.Context, userId, tournamentId string) error
 }
 
 type tournamentService struct {
@@ -30,6 +33,7 @@ type tournamentService struct {
 	groupRepo         repository.GroupRepository
 	transactionRepo   database.TransactionRepository
 	userClient        protogrpc.UserServiceClient
+	leaderboardClient protogrpc.LeaderboardServiceClient
 	eventPublisher    *publisher.EventPublisher
 	logger            *logger.Logger
 }
@@ -39,8 +43,9 @@ func NewTournamentService(
 	participationRepo repository.ParticipationRepository,
 	groupRepo repository.GroupRepository,
 	transactionRepo database.TransactionRepository,
-	eventPublisher *publisher.EventPublisher,
 	userClient protogrpc.UserServiceClient,
+	leaderboardClient protogrpc.LeaderboardServiceClient,
+	eventPublisher *publisher.EventPublisher,
 	logger *logger.Logger,
 ) TournamentService {
 	return &tournamentService{
@@ -48,8 +53,9 @@ func NewTournamentService(
 		participationRepo: participationRepo,
 		groupRepo:         groupRepo,
 		transactionRepo:   transactionRepo,
-		eventPublisher:    eventPublisher,
 		userClient:        userClient,
+		leaderboardClient: leaderboardClient,
+		eventPublisher:    eventPublisher,
 		logger:            logger,
 	}
 }
@@ -103,7 +109,7 @@ func (s *tournamentService) EnterTournament(
 	}
 	s.logger.Info(fmt.Sprintf("current tournament is fetched: %s", tournament.TournamentId))
 
-	// Check existing particpation
+	// Check existing participation
 	existingParticipation, err := s.participationRepo.GetByUserAndTournament(ctx, userId, tournament.TournamentId)
 	if err != nil {
 		return fmt.Errorf("failed to get existing participation %w", err)
@@ -136,6 +142,8 @@ func (s *tournamentService) EnterTournament(
 		UserId:       userId,
 		TournamentId: tournament.TournamentId,
 		GroupId:      group.GroupId,
+		EndsAt:       tournament.EndsAt,
+		RewardingMap: tournament.RewardingMap,
 	}
 	s.setDefaultValuesForParticipation(participation)
 	putParticipationTransaction, err := s.participationRepo.GetTransactionForAddingParticipation(ctx, participation)
@@ -181,23 +189,57 @@ func (s *tournamentService) UpdateParticipationScore(
 	if participation != nil {
 		s.logger.Info("Participation score updated. %d", participation)
 
-		userResponse, err := s.userClient.GetById(ctx, &protogrpc.GetUserByIdRequest{
-			UserId: userId,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to get user grpc call: %s", err.Error())
-		}
-
 		s.eventPublisher.PublishTournamentParticipationScoreUpdated(
 			ctx,
 			userId,
-			userResponse.DisplayName,
 			participation.GroupId,
 			participation.TournamentId,
 			participation.Score,
 		)
 	}
 
+	return nil
+}
+
+func (s *tournamentService) ClaimReward(ctx context.Context, userId, tournamentId string) error {
+	participation, err := s.participationRepo.UpdateRewardProcessing(ctx, userId, tournamentId)
+	if err != nil {
+		return fmt.Errorf("failed to get tournament participation for user %w", err)
+	}
+	if participation == nil {
+		return fmt.Errorf("there is no participation or reward is already claimed")
+	}
+
+	reward, err := s.handleRewardClaim(ctx, userId, participation)
+	if err != nil {
+		if _, err := s.participationRepo.UpdateRewardUnclaimed(ctx, userId, tournamentId); err != nil {
+			return fmt.Errorf("failed to update back to unclaimed: %w", err)
+		}
+		return err
+	}
+
+	if reward <= 0 {
+		if _, err := s.participationRepo.UpdateRewardClaimed(ctx, userId, tournamentId); err != nil {
+			return fmt.Errorf("failed to mark participation claimed: %w", err)
+		}
+		return nil
+	}
+
+	addCoinResponse, err := s.userClient.CollectTournamentReward(ctx, &protogrpc.CollectTournamentRewardRequest{
+		UserId:       userId,
+		TournamentId: tournamentId,
+		Coin:         int32(reward),
+	})
+	if addCoinResponse == nil || err != nil {
+		if _, err := s.participationRepo.UpdateRewardUnclaimed(ctx, userId, tournamentId); err != nil {
+			return fmt.Errorf("failed to update back to unclaimed: %w", err)
+		}
+		return err
+	}
+
+	if _, err := s.participationRepo.UpdateRewardClaimed(ctx, userId, tournamentId); err != nil {
+		return fmt.Errorf("failed to mark participation claimed: %w", err)
+	}
 	return nil
 }
 
@@ -228,7 +270,7 @@ func (s *tournamentService) getDefaultGroupSize() int {
 }
 
 func (s *tournamentService) setDefaultValuesForParticipation(participation *models.Participation) {
-	participation.RewardsClaimed = false
+	participation.RewardClaimStatus = models.Unclaimed
 	participation.Score = 0
 }
 
@@ -334,4 +376,62 @@ func (s *tournamentService) handleAfterTournamentEntryOperations(ctx context.Con
 	}
 
 	return err
+}
+
+func (s *tournamentService) calculateReward(ctx context.Context, ranking int, rewardingMap map[string]int) (int, error) {
+	if ranking < 1 {
+		return 0, fmt.Errorf("invalid ranking: must be positive")
+	}
+
+	rankStr := strconv.Itoa(ranking)
+	if reward, exists := rewardingMap[rankStr]; exists {
+		return reward, nil
+	}
+
+	for key, reward := range rewardingMap {
+		if strings.Contains(key, "-") {
+			parts := strings.Split(key, "-")
+			if len(parts) != 2 {
+				continue
+			}
+
+			start, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
+			end, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
+
+			if err1 != nil || err2 != nil {
+				continue
+			}
+
+			if ranking >= start && ranking <= end {
+				return reward, nil
+			}
+		}
+	}
+
+	return 0, nil
+}
+
+func (s *tournamentService) handleRewardClaim(
+	ctx context.Context,
+	userId string,
+	participation *models.Participation,
+) (int, error) {
+	if participation.EndsAt.Compare(time.Now().UTC()) > 0 {
+		return 0, fmt.Errorf("tournament is not finished yet")
+	}
+
+	rankingResponse, err := s.leaderboardClient.GetTournamentRank(ctx, &protogrpc.GetTournamentRankRequest{
+		UserId:       userId,
+		TournamentId: participation.TournamentId,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get leaderboard grpc call: %s", err.Error())
+	}
+
+	reward, err := s.calculateReward(ctx, int(rankingResponse.Rank), participation.RewardingMap)
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate reward for user %w", err)
+	}
+
+	return reward, nil
 }

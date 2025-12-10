@@ -18,6 +18,7 @@ import (
 type TournamentRepository interface {
 	Create(ctx context.Context, Tournament *models.Tournament) error
 	GetActiveTournament(ctx context.Context) (*models.Tournament, error)
+	GetById(ctx context.Context, tournamentId string) (*models.Tournament, error)
 	Update(ctx context.Context, Tournament *models.Tournament) error
 }
 
@@ -85,6 +86,35 @@ func (r *tournamentRepo) GetActiveTournament(ctx context.Context) (*models.Tourn
 	}
 
 	return &Tournament, nil
+}
+
+func (r *tournamentRepo) GetById(ctx context.Context, tournamentId string) (*models.Tournament, error) {
+	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(r.db.Table()),
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{Value: models.TournamentPK(tournamentId)},
+			"SK": &types.AttributeValueMemberS{Value: models.MetaSK()},
+		},
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tournament: %w", err)
+	}
+
+	if result.Item == nil {
+		return nil, errors.NewAppError(
+			errors.ErrCodeNotFound,
+			"tournament not found",
+			nil,
+		)
+	}
+
+	var tournament models.Tournament
+	if err := attributevalue.UnmarshalMap(result.Item, &tournament); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal tournament: %w", err)
+	}
+
+	return &tournament, nil
 }
 
 func (r *tournamentRepo) Update(ctx context.Context, Tournament *models.Tournament) error {

@@ -69,6 +69,7 @@ func (x *EnterTournamentRequest) GetUserId() string {
 type ClaimRewardRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	TournamentId  string                 `protobuf:"bytes,2,opt,name=tournament_id,json=tournamentId,proto3" json:"tournament_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -110,15 +111,23 @@ func (x *ClaimRewardRequest) GetUserId() string {
 	return ""
 }
 
+func (x *ClaimRewardRequest) GetTournamentId() string {
+	if x != nil {
+		return x.TournamentId
+	}
+	return ""
+}
+
 var File_v1_grpc_tournament_proto protoreflect.FileDescriptor
 
 const file_v1_grpc_tournament_proto_rawDesc = "" +
 	"\n" +
 	"\x18v1/grpc/tournament.proto\x12\x04grpc\x1a\x14v1/grpc/common.proto\"1\n" +
 	"\x16EnterTournamentRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"-\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"R\n" +
 	"\x12ClaimRewardRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId2\x9b\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12#\n" +
+	"\rtournament_id\x18\x02 \x01(\tR\ftournamentId2\x9b\x01\n" +
 	"\x11TournamentService\x12F\n" +
 	"\x0fEnterTournament\x12\x1c.grpc.EnterTournamentRequest\x1a\x15.grpc.MessageResponse\x12>\n" +
 	"\vClaimReward\x12\x18.grpc.ClaimRewardRequest\x1a\x15.grpc.MessageResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"

@@ -18,16 +18,16 @@ type User struct {
 }
 
 // Key handlers
-func UserPK(userID string) string {
-	return fmt.Sprintf("USER#%s", userID)
+func UserPK(userId string) string {
+	return fmt.Sprintf("USER#%s", userId)
 }
 
 func ProfileSK() string {
 	return "PROFILE"
 }
 
-func UserSK(userID string) string {
-	return fmt.Sprintf("USER#%s", userID)
+func UserSK(userId string) string {
+	return fmt.Sprintf("USER#%s", userId)
 }
 
 func ExtractUserID(pk string) (string, error) {

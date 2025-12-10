@@ -24,11 +24,10 @@ const (
 type TournamentParticipationScoreUpdated struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
-	DisplayName   string                 `protobuf:"bytes,2,opt,name=displayName,proto3" json:"displayName,omitempty"`
-	GroupId       string                 `protobuf:"bytes,3,opt,name=groupId,proto3" json:"groupId,omitempty"`
-	TournamentId  string                 `protobuf:"bytes,4,opt,name=tournamentId,proto3" json:"tournamentId,omitempty"`
-	NewScore      int32                  `protobuf:"varint,5,opt,name=newScore,proto3" json:"newScore,omitempty"`
-	TimeStamp     int64                  `protobuf:"varint,6,opt,name=timeStamp,proto3" json:"timeStamp,omitempty"`
+	GroupId       string                 `protobuf:"bytes,2,opt,name=groupId,proto3" json:"groupId,omitempty"`
+	TournamentId  string                 `protobuf:"bytes,3,opt,name=tournamentId,proto3" json:"tournamentId,omitempty"`
+	NewScore      int32                  `protobuf:"varint,4,opt,name=newScore,proto3" json:"newScore,omitempty"`
+	TimeStamp     int64                  `protobuf:"varint,5,opt,name=timeStamp,proto3" json:"timeStamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,13 +65,6 @@ func (*TournamentParticipationScoreUpdated) Descriptor() ([]byte, []int) {
 func (x *TournamentParticipationScoreUpdated) GetUserId() string {
 	if x != nil {
 		return x.UserId
-	}
-	return ""
-}
-
-func (x *TournamentParticipationScoreUpdated) GetDisplayName() string {
-	if x != nil {
-		return x.DisplayName
 	}
 	return ""
 }
@@ -185,14 +177,13 @@ var File_v1_events_tournament_events_proto protoreflect.FileDescriptor
 
 const file_v1_events_tournament_events_proto_rawDesc = "" +
 	"\n" +
-	"!v1/events/tournament_events.proto\x12\x06events\"\xd7\x01\n" +
+	"!v1/events/tournament_events.proto\x12\x06events\"\xb5\x01\n" +
 	"#TournamentParticipationScoreUpdated\x12\x16\n" +
-	"\x06userId\x18\x01 \x01(\tR\x06userId\x12 \n" +
-	"\vdisplayName\x18\x02 \x01(\tR\vdisplayName\x12\x18\n" +
-	"\agroupId\x18\x03 \x01(\tR\agroupId\x12\"\n" +
-	"\ftournamentId\x18\x04 \x01(\tR\ftournamentId\x12\x1a\n" +
-	"\bnewScore\x18\x05 \x01(\x05R\bnewScore\x12\x1c\n" +
-	"\ttimeStamp\x18\x06 \x01(\x03R\ttimeStamp\"\xa9\x01\n" +
+	"\x06userId\x18\x01 \x01(\tR\x06userId\x12\x18\n" +
+	"\agroupId\x18\x02 \x01(\tR\agroupId\x12\"\n" +
+	"\ftournamentId\x18\x03 \x01(\tR\ftournamentId\x12\x1a\n" +
+	"\bnewScore\x18\x04 \x01(\x05R\bnewScore\x12\x1c\n" +
+	"\ttimeStamp\x18\x05 \x01(\x03R\ttimeStamp\"\xa9\x01\n" +
 	"\x11TournamentEntered\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\tR\x06userId\x12 \n" +
 	"\vdisplayName\x18\x02 \x01(\tR\vdisplayName\x12\x18\n" +

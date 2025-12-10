@@ -93,6 +93,31 @@ func (h *UserHandler) GetById(ctx context.Context, req *proto.GetUserByIdRequest
 	return message, nil
 }
 
+func (h *UserHandler) CollectTournamentReward(ctx context.Context, req *proto.CollectTournamentRewardRequest) (*proto.MessageResponse, error) {
+	if req.UserId == "" || req.TournamentId == "" {
+		return nil, status.Error(codes.InvalidArgument, "User id is required")
+	}
+
+	if req.Coin <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "Reward must be a positive number")
+	}
+
+	err := h.userService.CollectTournamentReward(ctx, req.UserId, req.TournamentId, int(req.Coin))
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			return nil, appErr.ToGRPCStatus()
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+	}
+
+	message := &proto.MessageResponse{
+		IsSuccess: true,
+		Message:   "Collecting coin for user is succesful",
+	}
+
+	return message, nil
+}
+
 func (h *UserHandler) ReserveCoins(ctx context.Context, req *proto.ReserveCoinsRequest) (*proto.MessageResponse, error) {
 	err := h.userService.ReserveCoins(ctx, req.UserId, int(req.Amount), req.ReservationId)
 	if err != nil {

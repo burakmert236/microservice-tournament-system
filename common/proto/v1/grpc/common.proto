@@ -6,6 +6,6 @@ option go_package = "github.com/burakmert236/goodswipe-common/generated/grpc";
 
 // Common Types
 message MessageResponse {
-    bool isSuccess = 1;
+    bool is_success = 1;
     string message = 2;
 }

@@ -68,8 +68,6 @@ func (r *LeaderboardRepository) AddGlobalUser(ctx context.Context, userId, displ
 	}
 	pipe.ZRemRangeByRank(ctx, globalLeaderboardKey, 0, -GlobalLeaderboardLimit-1)
 
-	pipe.Expire(ctx, globalLeaderboardKey, DefaultTTL)
-
 	if _, err := pipe.Exec(ctx); err != nil {
 		r.logger.Error("Failed to add global user",
 			"error", err,
@@ -117,7 +115,7 @@ func (r *LeaderboardRepository) AddUserToTournament(
 // UpdateTournamentScore updates score for a specific tournament (NOT cumulative)
 func (r *LeaderboardRepository) UpdateTournamentScore(
 	ctx context.Context,
-	userId, displayName, tournamentId string,
+	userId, tournamentId string,
 	score int,
 ) error {
 	groupId, err := r.client.HGet(ctx, userGroupMappingsHashKey(), userTournamentField(userId, tournamentId)).Result()
@@ -128,8 +126,6 @@ func (r *LeaderboardRepository) UpdateTournamentScore(
 	}
 
 	pipe := r.client.Pipeline()
-
-	pipe.HSet(ctx, usernamesHashKey(), userId, displayName)
 
 	member := redis.Z{
 		Score:  float64(score),

@@ -46,12 +46,11 @@ func (p *EventPublisher) PublishTournamentEntered(
 
 func (p *EventPublisher) PublishTournamentParticipationScoreUpdated(
 	ctx context.Context,
-	userId, displayName, groupId, tournamentId string,
+	userId, groupId, tournamentId string,
 	newScore int,
 ) error {
 	event := &protoevents.TournamentParticipationScoreUpdated{
 		UserId:       userId,
-		DisplayName:  displayName,
 		GroupId:      groupId,
 		TournamentId: tournamentId,
 		NewScore:     int32(newScore),

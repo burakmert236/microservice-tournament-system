@@ -11,7 +11,6 @@ const (
 	ReservationStatusReserved   ReservationStatus = "RESERVED"
 	ReservationStatusConfirmed  ReservationStatus = "CONFIRMED"
 	ReservationStatusRolledBack ReservationStatus = "ROLLED_BACK"
-	ReservationStatusExpired    ReservationStatus = "EXPIRED"
 )
 
 type Reservation struct {
@@ -27,8 +26,8 @@ type Reservation struct {
 	SK string `dynamodbav:"SK"`
 }
 
-func ReservationPK(reservationID string) string {
-	return fmt.Sprintf("RESERVATION#%s", reservationID)
+func ReservationPK(reservationId string) string {
+	return fmt.Sprintf("RESERVATION#%s", reservationId)
 }
 
 func ReservationSK() string {

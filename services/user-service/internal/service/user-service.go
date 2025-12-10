@@ -18,8 +18,9 @@ import (
 
 type UserService interface {
 	CreateUser(ctx context.Context, displayName string) (*models.User, error)
-	UpdateProgress(ctx context.Context, userId string, levelIncrease int) error
 	GetById(ctx context.Context, userId string) (*models.User, error)
+	UpdateProgress(ctx context.Context, userId string, levelIncrease int) error
+	CollectTournamentReward(ctx context.Context, userId, tournamentId string, coin int) error
 
 	// Reservation methods
 	ReserveCoins(ctx context.Context, userId string, amount int, reservationId string) error
@@ -28,26 +29,29 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo        repository.UserRepository
-	reservationRepo repository.ReservationRepository
-	transactionRepo database.TransactionRepository
-	publisher       *events.EventPublisher
-	logger          *logger.Logger
+	userRepo              repository.UserRepository
+	reservationRepo       repository.ReservationRepository
+	rewardClaimRepository repository.RewardClaimRepository
+	transactionRepo       database.TransactionRepository
+	publisher             *events.EventPublisher
+	logger                *logger.Logger
 }
 
 func NewUserService(
 	userRepo repository.UserRepository,
 	reservationRepo repository.ReservationRepository,
+	rewardClaimRepository repository.RewardClaimRepository,
 	transactionRepo database.TransactionRepository,
 	publisher *events.EventPublisher,
 	logger *logger.Logger,
 ) UserService {
 	return &userService{
-		userRepo:        userRepo,
-		reservationRepo: reservationRepo,
-		transactionRepo: transactionRepo,
-		publisher:       publisher,
-		logger:          logger,
+		userRepo:              userRepo,
+		reservationRepo:       reservationRepo,
+		rewardClaimRepository: rewardClaimRepository,
+		transactionRepo:       transactionRepo,
+		publisher:             publisher,
+		logger:                logger,
 	}
 }
 
@@ -74,6 +78,15 @@ func (s *userService) CreateUser(ctx context.Context, displayName string) (*mode
 	return user, err
 }
 
+func (s *userService) GetById(ctx context.Context, userId string) (*models.User, error) {
+	user, err := s.userRepo.GetById(ctx, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by id: %s, %w", userId, err)
+	}
+
+	return user, nil
+}
+
 func (s *userService) UpdateProgress(ctx context.Context, userId string, levelIncrease int) error {
 	reward := levelIncrease * s.getCoinRewardPerLevelUpgrade()
 	newLevel, err := s.userRepo.UpdateLevelProgress(ctx, userId, levelIncrease, reward)
@@ -85,16 +98,36 @@ func (s *userService) UpdateProgress(ctx context.Context, userId string, levelIn
 	return s.publisher.PublishUserLevelUp(ctx, userId, levelIncrease, newLevel)
 }
 
-func (s *userService) GetById(ctx context.Context, userId string) (*models.User, error) {
-	user, err := s.userRepo.GetById(ctx, userId)
+func (s *userService) CollectTournamentReward(
+	ctx context.Context,
+	userId, tournamentId string,
+	coin int,
+) error {
+	rewardClaim, err := s.rewardClaimRepository.GetByIdempotency(ctx, userId, tournamentId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user by id: %s, %w", userId, err)
+		return fmt.Errorf("failed to get reward claim: %w", err)
 	}
 
-	return user, nil
+	if rewardClaim != nil {
+		return nil
+	}
+
+	err = s.userRepo.AddCoin(ctx, userId, coin)
+	if err != nil {
+		if err = s.rewardClaimRepository.Delete(ctx, userId, tournamentId); err != nil {
+			return fmt.Errorf("failed to delete idempotency key: %w", err)
+		}
+		return fmt.Errorf("failed to collect coin for user: %w", err)
+	}
+
+	if err = s.rewardClaimRepository.Create(ctx, userId, tournamentId); err != nil {
+		return fmt.Errorf("failed to create idempotency key: %w", err)
+	}
+
+	return nil
 }
 
-// Rservation methods
+// Reservation methods
 
 func (s *userService) ReserveCoins(ctx context.Context, userId string, amount int, reservationId string) error {
 	existing, err := s.reservationRepo.GetById(ctx, reservationId)

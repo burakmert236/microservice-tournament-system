@@ -66,11 +66,11 @@ func (h *LeaderboardHandler) GetTournamentLeaderboard(
 	}
 
 	responseUsers := make([]*proto.UserInfo, len(leaderboard))
-	for i, entry := range responseUsers {
+	for i, entry := range leaderboard {
 		responseUsers[i] = &proto.UserInfo{
 			UserId:      entry.UserId,
 			DisplayName: entry.DisplayName,
-			Score:       entry.Score,
+			Score:       int64(entry.Score),
 		}
 	}
 

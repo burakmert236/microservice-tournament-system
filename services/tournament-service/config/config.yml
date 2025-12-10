@@ -12,6 +12,7 @@ server:
   environment: "development"
   logLevel: "debug"
   userServiceAddress: "localhost:9090"
+  leaderboardServiceAddress: "localhost:9092"
 
 nats:
   url: "http://localhost:4222"

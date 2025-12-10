@@ -32,6 +32,8 @@ type App struct {
 	natsClient        *natsjetstream.Client
 	logger            *logger.Logger
 	tournamentService service.TournamentService
+	userClient        protogrpc.UserServiceClient
+	leaderboardClient protogrpc.LeaderboardServiceClient
 	scheduler         *scheduler.Scheduler
 	eventPublisher    *publisher.EventPublisher
 	eventSubscriber   *subscriber.EventSubscriber
@@ -59,6 +61,14 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 
 	if err := app.initMessagePublisher(ctx); err != nil {
 		return nil, fmt.Errorf("failed to init message publisher: %w", err)
+	}
+
+	if err := app.initUserClient(); err != nil {
+		return nil, fmt.Errorf("failed to init User Client: %w", err)
+	}
+
+	if err := app.initLeaderboardClient(); err != nil {
+		return nil, fmt.Errorf("failed to init Leaderboard Client: %w", err)
 	}
 
 	if err := app.initGRPC(); err != nil {
@@ -128,7 +138,7 @@ func (a *App) initMessageSubscriber(ctx context.Context) error {
 	return a.eventSubscriber.Start(ctx)
 }
 
-func (a *App) initGRPC() error {
+func (a *App) initUserClient() error {
 	userServiceAddr := a.cfg.Server.UserServiceAddress
 	userConn, err := grpc.NewClient(userServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -137,9 +147,28 @@ func (a *App) initGRPC() error {
 
 	a.cleanup = append(a.cleanup, userConn.Close)
 
-	userClient := protogrpc.NewUserServiceClient(userConn)
+	a.userClient = protogrpc.NewUserServiceClient(userConn)
 	a.logger.Info("Connected to User Service at %s", userServiceAddr)
 
+	return nil
+}
+
+func (a *App) initLeaderboardClient() error {
+	leaderboardServiceAddr := a.cfg.Server.LeaderboardServiceAddress
+	leaderboardConn, err := grpc.NewClient(leaderboardServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		a.logger.Fatal("Failed to connect to Laderboard Service: %v", err)
+	}
+
+	a.cleanup = append(a.cleanup, leaderboardConn.Close)
+
+	a.leaderboardClient = protogrpc.NewLeaderboardServiceClient(leaderboardConn)
+	a.logger.Info("Connected to Laderboard Service at %s", leaderboardServiceAddr)
+
+	return nil
+}
+
+func (a *App) initGRPC() error {
 	tournamentRepo := repository.NewTournamentRepository(a.db)
 	participationRepo := repository.NewParticipationRRepository(a.db)
 	groupRepo := repository.NewGroupRepository(a.db)
@@ -150,8 +179,9 @@ func (a *App) initGRPC() error {
 		participationRepo,
 		groupRepo,
 		transactionRepo,
+		a.userClient,
+		a.leaderboardClient,
 		a.eventPublisher,
-		userClient,
 		a.logger,
 	)
 

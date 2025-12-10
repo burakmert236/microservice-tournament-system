@@ -176,7 +176,7 @@ func (s *EventSubscriber) handleTournamentParticipationScoreUpdated(ctx context.
 		"user_id", event.UserId,
 	)
 
-	if err := s.leaderboardService.UpdateTournamentScore(ctx, event.UserId, event.DisplayName, event.TournamentId, int(event.NewScore)); err != nil {
+	if err := s.leaderboardService.UpdateTournamentScore(ctx, event.UserId, event.TournamentId, int(event.NewScore)); err != nil {
 		s.logger.Error("Failed to update tournament score",
 			"error", err,
 			"user_id", event.UserId,
