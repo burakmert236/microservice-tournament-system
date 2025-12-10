@@ -4,11 +4,11 @@ server:
   logLevel: "debug"
 
 nats:
-  url: "http://localhost:4222"
+  url: "http://nats:4222"
   maxReconnect: 10
   reconnectWaitSeconds: 2
   timeoutSeconds: 5
 
 redis:
-  address: "localhost:6379"
+  address: "redis:6379"
   password: ""
