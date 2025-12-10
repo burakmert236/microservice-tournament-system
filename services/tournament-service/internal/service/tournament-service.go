@@ -266,7 +266,7 @@ func (s *tournamentService) setDefaultValueForGroup(group *models.Group) {
 }
 
 func (s *tournamentService) getDefaultGroupSize() int {
-	return 2
+	return 35
 }
 
 func (s *tournamentService) setDefaultValuesForParticipation(participation *models.Participation) {
