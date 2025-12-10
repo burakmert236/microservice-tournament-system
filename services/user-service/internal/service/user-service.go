@@ -69,7 +69,7 @@ func (s *userService) CreateUser(ctx context.Context, displayName string) (*mode
 
 	s.logger.Info("User created: %s", user.UserId)
 
-	err := s.publisher.PublishUserCreated(ctx, user.UserId)
+	err := s.publisher.PublishUserCreated(ctx, user.UserId, user.DisplayName)
 
 	return user, err
 }
@@ -177,10 +177,9 @@ func (s *userService) getCoinRewardPerLevelUpgrade() int {
 
 func (s *userService) getDefaultUser() *models.User {
 	return &models.User{
-		UserId:     uuid.New().String(),
-		Level:      1,
-		Coin:       1000,
-		TotalScore: 0,
+		UserId: uuid.New().String(),
+		Level:  1,
+		Coin:   1000,
 	}
 }
 

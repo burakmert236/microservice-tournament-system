@@ -88,7 +88,6 @@ func (h *UserHandler) GetById(ctx context.Context, req *proto.GetUserByIdRequest
 		DisplayName: user.DisplayName,
 		Level:       int32(user.Level),
 		Coin:        int32(user.Coin),
-		TotalScore:  int32(user.TotalScore),
 	}
 
 	return message, nil

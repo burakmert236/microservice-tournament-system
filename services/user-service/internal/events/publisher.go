@@ -23,10 +23,11 @@ func NewEventPublisher(client *natsjetstream.Client, logger *logger.Logger) *Eve
 	}
 }
 
-func (p *EventPublisher) PublishUserCreated(ctx context.Context, userId string) error {
+func (p *EventPublisher) PublishUserCreated(ctx context.Context, userId, displayName string) error {
 	event := &protoevents.UserCreated{
-		UserId:    userId,
-		TimeStamp: time.Now().Unix(),
+		UserId:      userId,
+		DisplayName: displayName,
+		TimeStamp:   time.Now().Unix(),
 	}
 
 	if err := p.publisher.PublishProto(ctx, commonevents.UserCreated, event); err != nil {

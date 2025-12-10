@@ -112,8 +112,16 @@ func (s *tournamentService) EnterTournament(
 		return nil
 	}
 
+	// Fetch user
+	userResponse, err := s.userClient.GetById(ctx, &protogrpc.GetUserByIdRequest{
+		UserId: userId,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get user grpc call: %s", err.Error())
+	}
+
 	// Handle validation and reservation
-	if err := s.handleBeforeTournamentEntryOperations(ctx, userId, reservationId, tournament); err != nil {
+	if err := s.handleBeforeTournamentEntryOperations(ctx, userId, reservationId, int(userResponse.Level), tournament); err != nil {
 		return err
 	}
 
@@ -147,7 +155,7 @@ func (s *tournamentService) EnterTournament(
 		return fmt.Errorf("failed to handle after tournament entry operations %w", err)
 	}
 
-	if err = s.eventPublisher.PublishTournamentEntered(ctx, userId, group.GroupId, tournament.TournamentId); err != nil {
+	if err = s.eventPublisher.PublishTournamentEntered(ctx, userId, userResponse.DisplayName, group.GroupId, tournament.TournamentId); err != nil {
 		return fmt.Errorf("failed to publish tournament entered event %w", err)
 	}
 
@@ -173,9 +181,17 @@ func (s *tournamentService) UpdateParticipationScore(
 	if participation != nil {
 		s.logger.Info("Participation score updated. %d", participation)
 
+		userResponse, err := s.userClient.GetById(ctx, &protogrpc.GetUserByIdRequest{
+			UserId: userId,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to get user grpc call: %s", err.Error())
+		}
+
 		s.eventPublisher.PublishTournamentParticipationScoreUpdated(
 			ctx,
 			userId,
+			userResponse.DisplayName,
 			participation.GroupId,
 			participation.TournamentId,
 			participation.Score,
@@ -268,24 +284,18 @@ func (s *tournamentService) findOrCreateAvailableGroup(ctx context.Context, tour
 func (s *tournamentService) handleBeforeTournamentEntryOperations(
 	ctx context.Context,
 	userId, reservationId string,
+	level int,
 	tournament *models.Tournament,
 ) error {
 	if err := s.validateDate(tournament); err != nil {
 		return err
 	}
 
-	userResponse, err := s.userClient.GetById(ctx, &protogrpc.GetUserByIdRequest{
-		UserId: userId,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get user grpc call: %s", err.Error())
-	}
-
-	if err := s.validateUserLevel(int(userResponse.Level), tournament); err != nil {
+	if err := s.validateUserLevel(level, tournament); err != nil {
 		return err
 	}
 
-	_, err = s.userClient.ReserveCoins(ctx, &protogrpc.ReserveCoinsRequest{
+	_, err := s.userClient.ReserveCoins(ctx, &protogrpc.ReserveCoinsRequest{
 		UserId:        userId,
 		Amount:        int64(tournament.EnteranceFee),
 		ReservationId: reservationId,

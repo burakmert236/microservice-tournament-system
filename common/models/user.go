@@ -10,7 +10,6 @@ type User struct {
 	DisplayName string    `dynamodbav:"display_name"`
 	Level       int       `dynamodbav:"level"`
 	Coin        int       `dynamodbav:"coin"`
-	TotalScore  int       `dynamodbav:"total_score"`
 	CreatedAt   time.Time `dynamodbav:"created_at"`
 	UpdatedAt   time.Time `dynamodbav:"updated_at"`
 

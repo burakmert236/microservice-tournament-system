@@ -25,10 +25,11 @@ func NewEventPublisher(client *natsjetstream.Client, logger *logger.Logger) *Eve
 
 func (p *EventPublisher) PublishTournamentEntered(
 	ctx context.Context,
-	userId, groupId, tournamentId string,
+	userId, displayName, groupId, tournamentId string,
 ) error {
 	event := &protoevents.TournamentEntered{
 		UserId:       userId,
+		DisplayName:  displayName,
 		GroupId:      groupId,
 		TournamentId: tournamentId,
 		TimeStamp:    time.Now().Unix(),
@@ -45,11 +46,12 @@ func (p *EventPublisher) PublishTournamentEntered(
 
 func (p *EventPublisher) PublishTournamentParticipationScoreUpdated(
 	ctx context.Context,
-	userId, groupId, tournamentId string,
+	userId, displayName, groupId, tournamentId string,
 	newScore int,
 ) error {
 	event := &protoevents.TournamentParticipationScoreUpdated{
 		UserId:       userId,
+		DisplayName:  displayName,
 		GroupId:      groupId,
 		TournamentId: tournamentId,
 		NewScore:     int32(newScore),

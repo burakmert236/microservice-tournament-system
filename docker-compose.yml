@@ -27,6 +27,15 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      - redis
   dynamodb:
     image: amazon/dynamodb-local
     container_name: dynamodb
@@ -104,4 +113,5 @@ services:
 volumes:
   nats_data:
   redis_data:
+  redis_insight_data:
   dynamodb_data:

@@ -361,7 +361,6 @@ type GetUserByIdResponse struct {
 	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	Level         int32                  `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
 	Coin          int32                  `protobuf:"varint,4,opt,name=coin,proto3" json:"coin,omitempty"`
-	TotalScore    int32                  `protobuf:"varint,5,opt,name=total_score,json=totalScore,proto3" json:"total_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -424,13 +423,6 @@ func (x *GetUserByIdResponse) GetCoin() int32 {
 	return 0
 }
 
-func (x *GetUserByIdResponse) GetTotalScore() int32 {
-	if x != nil {
-		return x.TotalScore
-	}
-	return 0
-}
-
 var File_v1_grpc_user_proto protoreflect.FileDescriptor
 
 const file_v1_grpc_user_proto_rawDesc = "" +
@@ -452,14 +444,12 @@ const file_v1_grpc_user_proto_rawDesc = "" +
 	"\x1aRollbackReservationRequest\x12%\n" +
 	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"-\n" +
 	"\x12CreateUserResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x9c\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"{\n" +
 	"\x13GetUserByIdResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x12\n" +
-	"\x04coin\x18\x04 \x01(\x05R\x04coin\x12\x1f\n" +
-	"\vtotal_score\x18\x05 \x01(\x05R\n" +
-	"totalScore2\xb4\x03\n" +
+	"\x04coin\x18\x04 \x01(\x05R\x04coin2\xb4\x03\n" +
 	"\vUserService\x12?\n" +
 	"\n" +
 	"CreateUser\x12\x17.grpc.CreateUserRequest\x1a\x18.grpc.CreateUserResponse\x12D\n" +

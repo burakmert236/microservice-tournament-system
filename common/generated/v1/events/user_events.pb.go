@@ -24,7 +24,8 @@ const (
 type UserCreated struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
-	TimeStamp     int64                  `protobuf:"varint,2,opt,name=timeStamp,proto3" json:"timeStamp,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,2,opt,name=displayName,proto3" json:"displayName,omitempty"`
+	TimeStamp     int64                  `protobuf:"varint,3,opt,name=timeStamp,proto3" json:"timeStamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -62,6 +63,13 @@ func (*UserCreated) Descriptor() ([]byte, []int) {
 func (x *UserCreated) GetUserId() string {
 	if x != nil {
 		return x.UserId
+	}
+	return ""
+}
+
+func (x *UserCreated) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
 	}
 	return ""
 }
@@ -145,10 +153,11 @@ var File_v1_events_user_events_proto protoreflect.FileDescriptor
 
 const file_v1_events_user_events_proto_rawDesc = "" +
 	"\n" +
-	"\x1bv1/events/user_events.proto\x12\x06events\"C\n" +
+	"\x1bv1/events/user_events.proto\x12\x06events\"e\n" +
 	"\vUserCreated\x12\x16\n" +
-	"\x06userId\x18\x01 \x01(\tR\x06userId\x12\x1c\n" +
-	"\ttimeStamp\x18\x02 \x01(\x03R\ttimeStamp\"\x85\x01\n" +
+	"\x06userId\x18\x01 \x01(\tR\x06userId\x12 \n" +
+	"\vdisplayName\x18\x02 \x01(\tR\vdisplayName\x12\x1c\n" +
+	"\ttimeStamp\x18\x03 \x01(\x03R\ttimeStamp\"\x85\x01\n" +
 	"\vUserLevelUp\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\tR\x06userId\x12$\n" +
 	"\rlevelIncrease\x18\x02 \x01(\x05R\rlevelIncrease\x12\x1a\n" +

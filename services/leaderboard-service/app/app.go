@@ -50,12 +50,12 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("failed to init NATS: %w", err)
 	}
 
-	if err := app.initMessaging(ctx); err != nil {
-		return nil, fmt.Errorf("failed to init messaging: %w", err)
-	}
-
 	if err := app.initGRPC(); err != nil {
 		return nil, fmt.Errorf("failed to init gRPC: %w", err)
+	}
+
+	if err := app.initMessaging(ctx); err != nil {
+		return nil, fmt.Errorf("failed to init messaging: %w", err)
 	}
 
 	return app, nil
@@ -100,14 +100,14 @@ func (a *App) initMessaging(ctx context.Context) error {
 }
 
 func (a *App) initGRPC() error {
-	leaderboardRepo := repository.NewLeaderboardRepo(a.redisClient)
+	leaderboardRepo := repository.NewLeaderboardRepository(a.redisClient, a.logger)
 
-	leaderboardService := service.NewLeaderboardService(
+	a.leaderboardService = service.NewLeaderboardService(
 		*leaderboardRepo,
 		a.logger,
 	)
 
-	leaderboardHandler := handler.NewLeaderboardHandler(leaderboardService, a.logger)
+	leaderboardHandler := handler.NewLeaderboardHandler(a.leaderboardService, a.logger)
 
 	a.grpcServer = grpc.NewServer(
 		grpc.UnaryInterceptor(a.loggingInterceptor),

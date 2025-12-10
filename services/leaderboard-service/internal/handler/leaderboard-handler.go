@@ -29,7 +29,7 @@ func (h *LeaderboardHandler) GetGlobalLeaderboard(
 	ctx context.Context,
 	req *proto.GetGlobalLeaderboardRequest,
 ) (*proto.GetGlobalLeaderboardResponse, error) {
-	err := h.leaderboardService.GetGlobalLeaderboard(ctx)
+	leaderboard, err := h.leaderboardService.GetGlobalLeaderboard(ctx)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()
@@ -37,11 +37,16 @@ func (h *LeaderboardHandler) GetGlobalLeaderboard(
 		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
 	}
 
-	resp := &proto.GetGlobalLeaderboardResponse{
-		// UserId: user.UserId,
+	responseUsers := make([]*proto.UserInfo, len(leaderboard))
+	for i, entry := range leaderboard {
+		responseUsers[i] = &proto.UserInfo{
+			UserId:      entry.UserId,
+			DisplayName: entry.DisplayName,
+			Score:       int64(entry.Score),
+		}
 	}
 
-	return resp, nil
+	return &proto.GetGlobalLeaderboardResponse{Users: responseUsers}, nil
 }
 
 func (h *LeaderboardHandler) GetTournamentLeaderboard(
@@ -52,7 +57,7 @@ func (h *LeaderboardHandler) GetTournamentLeaderboard(
 		return nil, status.Error(codes.InvalidArgument, "User id and tournament id is required")
 	}
 
-	err := h.leaderboardService.GetTournamentLeaderboard(ctx, req.UserId, req.TournamentId)
+	leaderboard, err := h.leaderboardService.GetTournamentLeaderboard(ctx, req.UserId, req.TournamentId)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()
@@ -60,11 +65,16 @@ func (h *LeaderboardHandler) GetTournamentLeaderboard(
 		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
 	}
 
-	resp := &proto.GetTournamentLeaderboardResponse{
-		// UserId: user.UserId,
+	responseUsers := make([]*proto.UserInfo, len(leaderboard))
+	for i, entry := range responseUsers {
+		responseUsers[i] = &proto.UserInfo{
+			UserId:      entry.UserId,
+			DisplayName: entry.DisplayName,
+			Score:       entry.Score,
+		}
 	}
 
-	return resp, nil
+	return &proto.GetTournamentLeaderboardResponse{Users: responseUsers}, nil
 }
 
 func (h *LeaderboardHandler) GetTournamentRank(
@@ -75,7 +85,7 @@ func (h *LeaderboardHandler) GetTournamentRank(
 		return nil, status.Error(codes.InvalidArgument, "User id and tournament id is required")
 	}
 
-	err := h.leaderboardService.GetTournamentRank(ctx, req.UserId, req.TournamentId)
+	rank, err := h.leaderboardService.GetTournamentRank(ctx, req.UserId, req.TournamentId)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			return nil, appErr.ToGRPCStatus()
@@ -83,9 +93,5 @@ func (h *LeaderboardHandler) GetTournamentRank(
 		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
 	}
 
-	resp := &proto.GetTournamentRankResponse{
-		// UserId: user.UserId,
-	}
-
-	return resp, nil
+	return &proto.GetTournamentRankResponse{Rank: int32(rank)}, nil
 }

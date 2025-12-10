@@ -6,15 +6,17 @@ option go_package = "github.com/burakmert236/goodswipe/generated/events";
 
 message TournamentParticipationScoreUpdated {
     string userId = 1;
-    string groupId = 2;
-    string tournamentId = 3;
-    int32 newScore = 4;
-    int64 timeStamp = 5;
+    string displayName = 2;
+    string groupId = 3;
+    string tournamentId = 4;
+    int32 newScore = 5;
+    int64 timeStamp = 6;
 }
 
 message TournamentEntered {
     string userId = 1;
-    string groupId = 2;
-    string tournamentId = 3;
-    int64 timeStamp = 4;
+    string displayName = 2;
+    string groupId = 3;
+    string tournamentId = 4;
+    int64 timeStamp = 5;
 }

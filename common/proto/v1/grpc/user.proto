@@ -56,5 +56,4 @@ message GetUserByIdResponse {
 	string display_name = 2;
 	int32 level = 3;
   int32 coin = 4;
-  int32 total_score = 5;
 }
