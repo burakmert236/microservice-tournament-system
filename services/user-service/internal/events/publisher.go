@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	commonevents "github.com/burakmert236/goodswipe-common/events"
 	protoevents "github.com/burakmert236/goodswipe-common/generated/v1/events"
 	"github.com/burakmert236/goodswipe-common/logger"
@@ -23,7 +24,7 @@ func NewEventPublisher(client *natsjetstream.Client, logger *logger.Logger) *Eve
 	}
 }
 
-func (p *EventPublisher) PublishUserCreated(ctx context.Context, userId, displayName string) error {
+func (p *EventPublisher) PublishUserCreated(ctx context.Context, userId, displayName string) *apperrors.AppError {
 	event := &protoevents.UserCreated{
 		UserId:      userId,
 		DisplayName: displayName,
@@ -32,14 +33,14 @@ func (p *EventPublisher) PublishUserCreated(ctx context.Context, userId, display
 
 	if err := p.publisher.PublishProto(ctx, commonevents.UserCreated, event); err != nil {
 		p.logger.Error(fmt.Sprintf("Failed to publish user created event: %v", err))
-		return fmt.Errorf("failed to publish event: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeEventPublishError, "failed to publish user created event")
 	}
 
 	p.logger.Info(fmt.Sprintf("Published user created event for user: %s", userId))
 	return nil
 }
 
-func (p *EventPublisher) PublishUserLevelUp(ctx context.Context, userId string, levelIncrease int, newLevel int) error {
+func (p *EventPublisher) PublishUserLevelUp(ctx context.Context, userId string, levelIncrease int, newLevel int) *apperrors.AppError {
 	event := &protoevents.UserLevelUp{
 		UserId:        userId,
 		LevelIncrease: int32(levelIncrease),
@@ -49,7 +50,7 @@ func (p *EventPublisher) PublishUserLevelUp(ctx context.Context, userId string, 
 
 	if err := p.publisher.PublishProto(ctx, commonevents.UserLevelUp, event); err != nil {
 		p.logger.Error(fmt.Sprintf("Failed to publish user level up event: %v", err))
-		return fmt.Errorf("failed to publish event: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeEventPublishError, "failed to publish user level up event")
 	}
 
 	p.logger.Info(fmt.Sprintf("Published user level up event for user: %s", userId))

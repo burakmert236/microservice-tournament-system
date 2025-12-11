@@ -11,6 +11,7 @@ import (
 
 	"github.com/burakmert236/goodswipe-common/config"
 	"github.com/burakmert236/goodswipe-common/database"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	commonevents "github.com/burakmert236/goodswipe-common/events"
 	protogrpc "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
@@ -40,23 +41,23 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	}
 
 	if err := app.initLogger(); err != nil {
-		return nil, fmt.Errorf("failed to init logger: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init logger")
 	}
 
 	if err := app.initDatabase(); err != nil {
-		return nil, fmt.Errorf("failed to init database: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init database")
 	}
 
 	if err := app.initNATS(ctx); err != nil {
-		return nil, fmt.Errorf("failed to init NATS: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init nats client")
 	}
 
 	if err := app.initMessaging(); err != nil {
-		return nil, fmt.Errorf("failed to init messaging: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init messaging")
 	}
 
 	if err := app.initGRPC(); err != nil {
-		return nil, fmt.Errorf("failed to init gRPC: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init grpc server")
 	}
 
 	return app, nil
@@ -70,7 +71,8 @@ func (a *App) initLogger() error {
 func (a *App) initDatabase() error {
 	dynamoClient, err := database.NewDynamoDBClient(a.cfg)
 	if err != nil {
-		a.logger.Fatal("Failed to create DynamoDB client: %v", err)
+		a.logger.Error("Failed to create DynamoDB client: %v", err)
+		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create dynamodb client")
 	}
 
 	a.db = dynamoClient
@@ -85,7 +87,7 @@ func (a *App) initNATS(ctx context.Context) error {
 		Timeout:       time.Duration(a.cfg.NATS.TimeoutSeconds) * time.Second,
 	})
 	if err != nil {
-		return err
+		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create nats client")
 	}
 
 	a.natsClient = natsClient
@@ -100,7 +102,7 @@ func (a *App) initNATS(ctx context.Context) error {
 			"error", err,
 			"stream", stream.Name,
 		)
-		return err
+		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create jetstream event stream")
 	}
 	a.logger.Info("Stream ready", "stream", stream.Name)
 
@@ -111,7 +113,6 @@ func (a *App) initNATS(ctx context.Context) error {
 
 func (a *App) initMessaging() error {
 	a.eventPublisher = events.NewEventPublisher(a.natsClient, a.logger)
-
 	return nil
 }
 

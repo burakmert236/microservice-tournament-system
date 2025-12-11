@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 )
 
 type TransactionBuilder struct {
@@ -20,9 +21,9 @@ func NewTransactionBuilder() *TransactionBuilder {
 	}
 }
 
-func (tb *TransactionBuilder) AddPut(item types.Put) error {
+func (tb *TransactionBuilder) AddPut(item types.Put) *apperrors.AppError {
 	if len(tb.items) >= tb.limit {
-		return fmt.Errorf("transaction limit exceeded: %d items", tb.limit)
+		return apperrors.New(apperrors.CodeTransactionError, fmt.Sprintf("transaction limit exceeded: %d items", tb.limit))
 	}
 	tb.items = append(tb.items, types.TransactWriteItem{
 		Put: &item,
@@ -30,9 +31,9 @@ func (tb *TransactionBuilder) AddPut(item types.Put) error {
 	return nil
 }
 
-func (tb *TransactionBuilder) AddUpdate(item types.Update) error {
+func (tb *TransactionBuilder) AddUpdate(item types.Update) *apperrors.AppError {
 	if len(tb.items) >= tb.limit {
-		return fmt.Errorf("transaction limit exceeded: %d items", tb.limit)
+		return apperrors.New(apperrors.CodeTransactionError, fmt.Sprintf("transaction limit exceeded: %d items", tb.limit))
 	}
 	tb.items = append(tb.items, types.TransactWriteItem{
 		Update: &item,
@@ -40,9 +41,9 @@ func (tb *TransactionBuilder) AddUpdate(item types.Update) error {
 	return nil
 }
 
-func (tb *TransactionBuilder) AddDelete(item types.Delete) error {
+func (tb *TransactionBuilder) AddDelete(item types.Delete) *apperrors.AppError {
 	if len(tb.items) >= tb.limit {
-		return fmt.Errorf("transaction limit exceeded: %d items", tb.limit)
+		return apperrors.New(apperrors.CodeTransactionError, fmt.Sprintf("transaction limit exceeded: %d items", tb.limit))
 	}
 	tb.items = append(tb.items, types.TransactWriteItem{
 		Delete: &item,
@@ -50,9 +51,9 @@ func (tb *TransactionBuilder) AddDelete(item types.Delete) error {
 	return nil
 }
 
-func (tb *TransactionBuilder) Execute(ctx context.Context, client *dynamodb.Client) error {
+func (tb *TransactionBuilder) Execute(ctx context.Context, client *dynamodb.Client) *apperrors.AppError {
 	if len(tb.items) == 0 {
-		return fmt.Errorf("no items in transaction")
+		return apperrors.New(apperrors.CodeTransactionError, "no items in transaction")
 	}
 
 	input := &dynamodb.TransactWriteItemsInput{
@@ -60,7 +61,7 @@ func (tb *TransactionBuilder) Execute(ctx context.Context, client *dynamodb.Clie
 	}
 
 	_, err := client.TransactWriteItems(ctx, input)
-	return err
+	return apperrors.Wrap(err, apperrors.CodeTransactionError, "failed to execute transaction")
 }
 
 func (tb *TransactionBuilder) Count() int {

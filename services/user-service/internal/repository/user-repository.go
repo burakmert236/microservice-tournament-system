@@ -11,16 +11,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"github.com/burakmert236/goodswipe-common/database"
-	"github.com/burakmert236/goodswipe-common/errors"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-common/models"
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user *models.User) error
-	GetById(ctx context.Context, userId string) (*models.User, error)
-	Update(ctx context.Context, user *models.User) error
-	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) (int, error)
-	AddCoin(ctx context.Context, userId string, coin int) error
+	Create(ctx context.Context, user *models.User) *apperrors.AppError
+	GetById(ctx context.Context, userId string) (*models.User, *apperrors.AppError)
+	Update(ctx context.Context, user *models.User) *apperrors.AppError
+	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) (int, *apperrors.AppError)
+	AddCoin(ctx context.Context, userId string, coin int) *apperrors.AppError
 
 	// Transactions operations
 	GetCoinDeductionTransaction(ctx context.Context, userId string, amount int) types.Update
@@ -35,14 +35,14 @@ func NewUserRepository(db *database.DynamoDBClient) UserRepository {
 	return &userRepo{db: db}
 }
 
-func (r *userRepo) Create(ctx context.Context, user *models.User) error {
+func (r *userRepo) Create(ctx context.Context, user *models.User) *apperrors.AppError {
 	user.PK = models.UserPK(user.UserId)
 	user.SK = models.ProfileSK()
 	user.CreatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
-		return fmt.Errorf("failed to marshal user: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshall user")
 	}
 
 	_, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
@@ -52,13 +52,13 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to create user")
 	}
 
 	return nil
 }
 
-func (r *userRepo) GetById(ctx context.Context, userId string) (*models.User, error) {
+func (r *userRepo) GetById(ctx context.Context, userId string) (*models.User, *apperrors.AppError) {
 	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -68,31 +68,27 @@ func (r *userRepo) GetById(ctx context.Context, userId string) (*models.User, er
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to get user")
 	}
 
 	if result.Item == nil {
-		return nil, errors.NewAppError(
-			errors.ErrCodeNotFound,
-			"user not found",
-			nil,
-		)
+		return nil, apperrors.New(apperrors.CodeNotFound, "user not found")
 	}
 
 	var user models.User
 	if err := attributevalue.UnmarshalMap(result.Item, &user); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal user: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal user")
 	}
 
 	return &user, nil
 }
 
-func (r *userRepo) Update(ctx context.Context, user *models.User) error {
+func (r *userRepo) Update(ctx context.Context, user *models.User) *apperrors.AppError {
 	user.UpdatedAt = time.Now()
 
 	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
-		return fmt.Errorf("failed to marshal user: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshall user")
 	}
 
 	_, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
@@ -102,7 +98,7 @@ func (r *userRepo) Update(ctx context.Context, user *models.User) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update user")
 	}
 
 	return nil
@@ -113,7 +109,7 @@ func (r *userRepo) UpdateLevelProgress(
 	userId string,
 	levelIncrease int,
 	coinReward int,
-) (int, error) {
+) (int, *apperrors.AppError) {
 	if levelIncrease == 0 {
 		return 0, nil
 	}
@@ -139,18 +135,18 @@ func (r *userRepo) UpdateLevelProgress(
 
 	result, err := r.db.Client.UpdateItem(ctx, input)
 	if err != nil {
-		return 0, fmt.Errorf("failed to update level progress: %w", err)
+		return 0, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update level progress")
 	}
 
 	var user models.User
 	if err := attributevalue.UnmarshalMap(result.Attributes, &user); err != nil {
-		return 0, fmt.Errorf("failed to unmarshal user: %w", err)
+		return 0, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal user")
 	}
 
 	return user.Level, nil
 }
 
-func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) error {
+func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) *apperrors.AppError {
 	coinAdditionTransaction := r.GetCoinAdditionTransaction(ctx, userId, coin)
 
 	input := &dynamodb.UpdateItemInput{
@@ -162,7 +158,7 @@ func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) error {
 
 	_, err := r.db.Client.UpdateItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("failed to update coin: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update coin")
 	}
 
 	return nil

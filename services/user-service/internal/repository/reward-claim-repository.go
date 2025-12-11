@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,13 +9,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/burakmert236/goodswipe-common/database"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-common/models"
 )
 
 type RewardClaimRepository interface {
-	Create(ctx context.Context, userId, tournamentId string) error
-	GetByIdempotency(ctx context.Context, userId, tournamentId string) (*models.RewardClaim, error)
-	Delete(ctx context.Context, userId, tournamentId string) error
+	Create(ctx context.Context, userId, tournamentId string) *apperrors.AppError
+	GetByIdempotency(ctx context.Context, userId, tournamentId string) (*models.RewardClaim, *apperrors.AppError)
+	Delete(ctx context.Context, userId, tournamentId string) *apperrors.AppError
 }
 
 type rewardClaimRepo struct {
@@ -27,7 +27,7 @@ func NewRewardClaimRepository(db *database.DynamoDBClient) RewardClaimRepository
 	return &rewardClaimRepo{db: db}
 }
 
-func (r *rewardClaimRepo) Create(ctx context.Context, userId, tournamentId string) error {
+func (r *rewardClaimRepo) Create(ctx context.Context, userId, tournamentId string) *apperrors.AppError {
 	rewardClaim := &models.RewardClaim{
 		UserId:       userId,
 		TournamentId: tournamentId,
@@ -39,7 +39,7 @@ func (r *rewardClaimRepo) Create(ctx context.Context, userId, tournamentId strin
 
 	item, err := attributevalue.MarshalMap(rewardClaim)
 	if err != nil {
-		return fmt.Errorf("failed to marshal reward claim: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshal reward claim")
 	}
 
 	_, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
@@ -49,7 +49,7 @@ func (r *rewardClaimRepo) Create(ctx context.Context, userId, tournamentId strin
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create reward claim: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to create reward claim")
 	}
 
 	return nil
@@ -58,7 +58,7 @@ func (r *rewardClaimRepo) Create(ctx context.Context, userId, tournamentId strin
 func (r *rewardClaimRepo) GetByIdempotency(
 	ctx context.Context,
 	userId, tournamentId string,
-) (*models.RewardClaim, error) {
+) (*models.RewardClaim, *apperrors.AppError) {
 	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -68,7 +68,7 @@ func (r *rewardClaimRepo) GetByIdempotency(
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get reward claim: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to get reward claim")
 	}
 
 	if result.Item == nil {
@@ -77,13 +77,13 @@ func (r *rewardClaimRepo) GetByIdempotency(
 
 	var rewardClaim models.RewardClaim
 	if err := attributevalue.UnmarshalMap(result.Item, &rewardClaim); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal reward claim: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal reward claim")
 	}
 
 	return &rewardClaim, nil
 }
 
-func (r *rewardClaimRepo) Delete(ctx context.Context, userId, tournamentId string) error {
+func (r *rewardClaimRepo) Delete(ctx context.Context, userId, tournamentId string) *apperrors.AppError {
 	_, err := r.db.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -93,7 +93,7 @@ func (r *rewardClaimRepo) Delete(ctx context.Context, userId, tournamentId strin
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to delete reward claim: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to delete reward claim")
 	}
 
 	return nil

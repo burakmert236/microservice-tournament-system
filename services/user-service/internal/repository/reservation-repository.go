@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,16 +9,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/burakmert236/goodswipe-common/database"
-	commonerrors "github.com/burakmert236/goodswipe-common/errors"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-common/models"
 )
 
 type ReservationRepository interface {
-	GetById(ctx context.Context, reservationId string) (*models.Reservation, error)
-	UpdateStatus(ctx context.Context, reservationId string, status models.ReservationStatus) error
+	GetById(ctx context.Context, reservationId string) (*models.Reservation, *apperrors.AppError)
+	UpdateStatus(ctx context.Context, reservationId string, status models.ReservationStatus) *apperrors.AppError
 
 	// Transaction operations
-	GetCreateTransaction(ctx context.Context, reservation *models.Reservation) (types.Put, error)
+	GetCreateTransaction(ctx context.Context, reservation *models.Reservation) (types.Put, *apperrors.AppError)
 	GetUpdateStatusTransaction(ctx context.Context, reservationId string, status models.ReservationStatus) types.Update
 }
 
@@ -31,7 +30,7 @@ func NewReservationRepository(db *database.DynamoDBClient) ReservationRepository
 	return &reservationRepo{db: db}
 }
 
-func (r *reservationRepo) GetById(ctx context.Context, reservationId string) (*models.Reservation, error) {
+func (r *reservationRepo) GetById(ctx context.Context, reservationId string) (*models.Reservation, *apperrors.AppError) {
 	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -41,26 +40,26 @@ func (r *reservationRepo) GetById(ctx context.Context, reservationId string) (*m
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get reservation: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to get reservation")
 	}
 
 	if result.Item == nil {
-		return nil, commonerrors.NewAppError(
-			commonerrors.ErrCodeNotFound,
-			"reservation not found",
-			nil,
-		)
+		return nil, apperrors.New(apperrors.CodeNotFound, "resefvation not found")
 	}
 
 	var reservation models.Reservation
 	if err := attributevalue.UnmarshalMap(result.Item, &reservation); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal reservation: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal reservation")
 	}
 
 	return &reservation, nil
 }
 
-func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationId string, status models.ReservationStatus) error {
+func (r *reservationRepo) UpdateStatus(
+	ctx context.Context,
+	reservationId string,
+	status models.ReservationStatus,
+) *apperrors.AppError {
 	transactionInfo := r.GetUpdateStatusTransaction(ctx, reservationId, status)
 
 	_, err := r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
@@ -71,19 +70,19 @@ func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationId string
 		ExpressionAttributeValues: transactionInfo.ExpressionAttributeValues,
 	})
 
-	return err
+	return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update reservation status")
 }
 
 // Transaction Operations
 
-func (r *reservationRepo) GetCreateTransaction(ctx context.Context, reservation *models.Reservation) (types.Put, error) {
+func (r *reservationRepo) GetCreateTransaction(ctx context.Context, reservation *models.Reservation) (types.Put, *apperrors.AppError) {
 	reservation.PK = models.ReservationPK(reservation.ReservationId)
 	reservation.SK = models.ReservationSK()
 	reservation.CreatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(reservation)
 	if err != nil {
-		return types.Put{}, fmt.Errorf("failed to marshal reservation: %w", err)
+		return types.Put{}, apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshal reservation")
 	}
 
 	return types.Put{
