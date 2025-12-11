@@ -57,14 +57,13 @@ func (r *tournamentRepo) GetActiveTournament(ctx context.Context) (*models.Tourn
 	result, err := r.db.Client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(r.db.Table()),
 		IndexName:              aws.String("GSI1"),
-		KeyConditionExpression: aws.String("GSI1PK = :current AND GSISK <= :now"),
+		KeyConditionExpression: aws.String("GSI1PK = :current"),
 		FilterExpression:       aws.String("starts_at <= :now AND ends_at >= :now"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":current": &types.AttributeValueMemberS{Value: models.TournamentGSI1PK()},
 			":now":     &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
 		},
-		ScanIndexForward: aws.Bool(false),
-		Limit:            aws.Int32(1),
+		Limit: aws.Int32(1),
 	})
 
 	if err != nil {

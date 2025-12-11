@@ -39,7 +39,7 @@ func TournamentGSI1PK() string {
 }
 
 func StartTimeGSI1SK(startTime string) string {
-	return startTime
+	return fmt.Sprintf("START#%s", startTime)
 }
 
 func ExtractTournamentID(pk string) (string, error) {
