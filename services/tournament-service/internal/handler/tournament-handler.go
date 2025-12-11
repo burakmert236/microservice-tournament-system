@@ -22,37 +22,37 @@ func NewTournamentHandler(TournamentService service.TournamentService, logger *l
 	}
 }
 
-func (h *TournamentHandler) EnterTournament(ctx context.Context, req *proto.EnterTournamentRequest) (*proto.MessageResponse, error) {
+func (h *TournamentHandler) EnterTournament(ctx context.Context, req *proto.EnterTournamentRequest) (*proto.EnterTournamentResponse, error) {
 	if req.UserId == "" {
 		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id is required"))
 	}
 
-	err := h.tournamentService.EnterTournament(ctx, req.UserId)
+	tournamentId, groupId, err := h.tournamentService.EnterTournament(ctx, req.UserId)
 	if err != nil {
 		return nil, apperrors.ToGRPCError(err)
 	}
 
-	resp := &proto.MessageResponse{
-		IsSuccess: true,
-		Message:   "User registered to tournament succesfully",
+	resp := &proto.EnterTournamentResponse{
+		TournamentId: tournamentId,
+		GroupId:      groupId,
 	}
 
 	return resp, nil
 }
 
-func (h *TournamentHandler) ClaimReward(ctx context.Context, req *proto.ClaimRewardRequest) (*proto.MessageResponse, error) {
+func (h *TournamentHandler) ClaimReward(ctx context.Context, req *proto.ClaimRewardRequest) (*proto.ClaimRewardResponse, error) {
 	if req.UserId == "" || req.TournamentId == "" {
 		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id and tournament id are required"))
 	}
 
-	err := h.tournamentService.ClaimReward(ctx, req.UserId, req.TournamentId)
+	tournamentId, reward, err := h.tournamentService.ClaimReward(ctx, req.UserId, req.TournamentId)
 	if err != nil {
 		return nil, apperrors.ToGRPCError(err)
 	}
 
-	resp := &proto.MessageResponse{
-		IsSuccess: true,
-		Message:   "Tournament reward is claimed succesfully",
+	resp := &proto.ClaimRewardResponse{
+		TournamentId: tournamentId,
+		Reward:       int32(reward),
 	}
 
 	return resp, nil

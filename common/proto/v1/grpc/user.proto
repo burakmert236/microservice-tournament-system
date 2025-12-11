@@ -10,7 +10,7 @@ import "v1/grpc/common.proto";
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc GetById(GetUserByIdRequest) returns (GetUserByIdResponse);
-  rpc UpdateProgress(UpdateProgressRequest) returns (MessageResponse);
+  rpc UpdateProgress(UpdateProgressRequest) returns (UpdateProgressResponse);
   rpc CollectTournamentReward(CollectTournamentRewardRequest) returns (MessageResponse);
 
   // Reservation methods for tournament entry
@@ -65,4 +65,10 @@ message GetUserByIdResponse {
 	string display_name = 2;
 	int32 level = 3;
   int32 coin = 4;
+}
+
+message UpdateProgressResponse {
+  string user_id = 1;
+  int32 level = 2;
+  int32 coin = 3;
 }

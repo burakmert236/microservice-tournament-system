@@ -499,6 +499,66 @@ func (x *GetUserByIdResponse) GetCoin() int32 {
 	return 0
 }
 
+type UpdateProgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Level         int32                  `protobuf:"varint,2,opt,name=level,proto3" json:"level,omitempty"`
+	Coin          int32                  `protobuf:"varint,3,opt,name=coin,proto3" json:"coin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProgressResponse) Reset() {
+	*x = UpdateProgressResponse{}
+	mi := &file_v1_grpc_user_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProgressResponse) ProtoMessage() {}
+
+func (x *UpdateProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_user_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProgressResponse.ProtoReflect.Descriptor instead.
+func (*UpdateProgressResponse) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_user_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UpdateProgressResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UpdateProgressResponse) GetLevel() int32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
+func (x *UpdateProgressResponse) GetCoin() int32 {
+	if x != nil {
+		return x.Coin
+	}
+	return 0
+}
+
 var File_v1_grpc_user_proto protoreflect.FileDescriptor
 
 const file_v1_grpc_user_proto_rawDesc = "" +
@@ -531,12 +591,16 @@ const file_v1_grpc_user_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x12\n" +
-	"\x04coin\x18\x04 \x01(\x05R\x04coin2\x8c\x04\n" +
+	"\x04coin\x18\x04 \x01(\x05R\x04coin\"[\n" +
+	"\x16UpdateProgressResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05level\x18\x02 \x01(\x05R\x05level\x12\x12\n" +
+	"\x04coin\x18\x03 \x01(\x05R\x04coin2\x93\x04\n" +
 	"\vUserService\x12?\n" +
 	"\n" +
 	"CreateUser\x12\x17.grpc.CreateUserRequest\x1a\x18.grpc.CreateUserResponse\x12>\n" +
-	"\aGetById\x12\x18.grpc.GetUserByIdRequest\x1a\x19.grpc.GetUserByIdResponse\x12D\n" +
-	"\x0eUpdateProgress\x12\x1b.grpc.UpdateProgressRequest\x1a\x15.grpc.MessageResponse\x12V\n" +
+	"\aGetById\x12\x18.grpc.GetUserByIdRequest\x1a\x19.grpc.GetUserByIdResponse\x12K\n" +
+	"\x0eUpdateProgress\x12\x1b.grpc.UpdateProgressRequest\x1a\x1c.grpc.UpdateProgressResponse\x12V\n" +
 	"\x17CollectTournamentReward\x12$.grpc.CollectTournamentRewardRequest\x1a\x15.grpc.MessageResponse\x12@\n" +
 	"\fReserveCoins\x12\x19.grpc.ReserveCoinsRequest\x1a\x15.grpc.MessageResponse\x12L\n" +
 	"\x12ConfirmReservation\x12\x1f.grpc.ConfirmReservationRequest\x1a\x15.grpc.MessageResponse\x12N\n" +
@@ -554,7 +618,7 @@ func file_v1_grpc_user_proto_rawDescGZIP() []byte {
 	return file_v1_grpc_user_proto_rawDescData
 }
 
-var file_v1_grpc_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_v1_grpc_user_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_v1_grpc_user_proto_goTypes = []any{
 	(*CreateUserRequest)(nil),              // 0: grpc.CreateUserRequest
 	(*GetUserByIdRequest)(nil),             // 1: grpc.GetUserByIdRequest
@@ -565,28 +629,29 @@ var file_v1_grpc_user_proto_goTypes = []any{
 	(*RollbackReservationRequest)(nil),     // 6: grpc.RollbackReservationRequest
 	(*CreateUserResponse)(nil),             // 7: grpc.CreateUserResponse
 	(*GetUserByIdResponse)(nil),            // 8: grpc.GetUserByIdResponse
-	(*MessageResponse)(nil),                // 9: grpc.MessageResponse
+	(*UpdateProgressResponse)(nil),         // 9: grpc.UpdateProgressResponse
+	(*MessageResponse)(nil),                // 10: grpc.MessageResponse
 }
 var file_v1_grpc_user_proto_depIdxs = []int32{
-	0, // 0: grpc.UserService.CreateUser:input_type -> grpc.CreateUserRequest
-	1, // 1: grpc.UserService.GetById:input_type -> grpc.GetUserByIdRequest
-	2, // 2: grpc.UserService.UpdateProgress:input_type -> grpc.UpdateProgressRequest
-	3, // 3: grpc.UserService.CollectTournamentReward:input_type -> grpc.CollectTournamentRewardRequest
-	4, // 4: grpc.UserService.ReserveCoins:input_type -> grpc.ReserveCoinsRequest
-	5, // 5: grpc.UserService.ConfirmReservation:input_type -> grpc.ConfirmReservationRequest
-	6, // 6: grpc.UserService.RollbackReservation:input_type -> grpc.RollbackReservationRequest
-	7, // 7: grpc.UserService.CreateUser:output_type -> grpc.CreateUserResponse
-	8, // 8: grpc.UserService.GetById:output_type -> grpc.GetUserByIdResponse
-	9, // 9: grpc.UserService.UpdateProgress:output_type -> grpc.MessageResponse
-	9, // 10: grpc.UserService.CollectTournamentReward:output_type -> grpc.MessageResponse
-	9, // 11: grpc.UserService.ReserveCoins:output_type -> grpc.MessageResponse
-	9, // 12: grpc.UserService.ConfirmReservation:output_type -> grpc.MessageResponse
-	9, // 13: grpc.UserService.RollbackReservation:output_type -> grpc.MessageResponse
-	7, // [7:14] is the sub-list for method output_type
-	0, // [0:7] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: grpc.UserService.CreateUser:input_type -> grpc.CreateUserRequest
+	1,  // 1: grpc.UserService.GetById:input_type -> grpc.GetUserByIdRequest
+	2,  // 2: grpc.UserService.UpdateProgress:input_type -> grpc.UpdateProgressRequest
+	3,  // 3: grpc.UserService.CollectTournamentReward:input_type -> grpc.CollectTournamentRewardRequest
+	4,  // 4: grpc.UserService.ReserveCoins:input_type -> grpc.ReserveCoinsRequest
+	5,  // 5: grpc.UserService.ConfirmReservation:input_type -> grpc.ConfirmReservationRequest
+	6,  // 6: grpc.UserService.RollbackReservation:input_type -> grpc.RollbackReservationRequest
+	7,  // 7: grpc.UserService.CreateUser:output_type -> grpc.CreateUserResponse
+	8,  // 8: grpc.UserService.GetById:output_type -> grpc.GetUserByIdResponse
+	9,  // 9: grpc.UserService.UpdateProgress:output_type -> grpc.UpdateProgressResponse
+	10, // 10: grpc.UserService.CollectTournamentReward:output_type -> grpc.MessageResponse
+	10, // 11: grpc.UserService.ReserveCoins:output_type -> grpc.MessageResponse
+	10, // 12: grpc.UserService.ConfirmReservation:output_type -> grpc.MessageResponse
+	10, // 13: grpc.UserService.RollbackReservation:output_type -> grpc.MessageResponse
+	7,  // [7:14] is the sub-list for method output_type
+	0,  // [0:7] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_v1_grpc_user_proto_init() }
@@ -601,7 +666,7 @@ func file_v1_grpc_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_grpc_user_proto_rawDesc), len(file_v1_grpc_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

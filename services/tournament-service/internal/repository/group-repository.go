@@ -94,11 +94,12 @@ func (r *groupRepo) GetTransactionForAddingParticipant(
 			"SK": &types.AttributeValueMemberS{Value: models.GroupSK(groupId)},
 		},
 		UpdateExpression: aws.String(`
-			SET participant_count = if_not_exists(participant_count, :zero) + :inc
+			SET participant_count = if_not_exists(participant_count, :zero) + :inc, updated_at = :now
 		`),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":inc":  &types.AttributeValueMemberN{Value: "1"},
 			":zero": &types.AttributeValueMemberN{Value: "0"},
+			":now":  &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
 		},
 		ConditionExpression: aws.String("attribute_not_exists(participant_count) OR participant_count < group_size"),
 	}

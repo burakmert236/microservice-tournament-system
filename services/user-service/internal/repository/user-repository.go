@@ -18,7 +18,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) *apperrors.AppError
 	GetById(ctx context.Context, userId string) (*models.User, *apperrors.AppError)
-	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) (int, *apperrors.AppError)
+	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) (*models.User, *apperrors.AppError)
 	AddCoin(ctx context.Context, userId string, coin int) *apperrors.AppError
 
 	// Transactions operations
@@ -87,9 +87,9 @@ func (r *userRepo) UpdateLevelProgress(
 	userId string,
 	levelIncrease int,
 	coinReward int,
-) (int, *apperrors.AppError) {
+) (*models.User, *apperrors.AppError) {
 	if levelIncrease == 0 {
-		return 0, nil
+		return nil, nil
 	}
 
 	input := &dynamodb.UpdateItemInput{
@@ -113,15 +113,15 @@ func (r *userRepo) UpdateLevelProgress(
 
 	result, err := r.db.Client.UpdateItem(ctx, input)
 	if err != nil {
-		return 0, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update level progress")
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update level progress")
 	}
 
 	var user models.User
 	if err := attributevalue.UnmarshalMap(result.Attributes, &user); err != nil {
-		return 0, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal user")
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal user")
 	}
 
-	return user.Level, nil
+	return &user, nil
 }
 
 func (r *userRepo) AddCoin(ctx context.Context, userId string, coin int) *apperrors.AppError {

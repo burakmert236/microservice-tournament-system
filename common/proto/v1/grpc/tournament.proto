@@ -8,8 +8,8 @@ import "v1/grpc/common.proto";
 
 // Services
 service TournamentService {
-    rpc EnterTournament(EnterTournamentRequest) returns (MessageResponse);
-    rpc ClaimReward(ClaimRewardRequest) returns (MessageResponse);
+    rpc EnterTournament(EnterTournamentRequest) returns (EnterTournamentResponse);
+    rpc ClaimReward(ClaimRewardRequest) returns (ClaimRewardResponse);
 }
 
 // Requests
@@ -20,4 +20,16 @@ message EnterTournamentRequest {
 message ClaimRewardRequest {
     string user_id = 1;
     string tournament_id = 2;
+}
+
+// Responses
+
+message EnterTournamentResponse {
+    string tournament_id = 1;
+    string group_id = 2;
+}
+
+message ClaimRewardResponse {
+    string tournament_id = 1;
+    int32 reward = 2;
 }

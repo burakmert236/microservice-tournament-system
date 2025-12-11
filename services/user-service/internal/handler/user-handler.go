@@ -39,7 +39,7 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *proto.CreateUserReque
 	return resp, nil
 }
 
-func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgressRequest) (*proto.MessageResponse, error) {
+func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgressRequest) (*proto.UpdateProgressResponse, error) {
 	if req.UserId == "" {
 		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id is required"))
 	}
@@ -47,14 +47,15 @@ func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgr
 		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "Progress amount must be a positive number"))
 	}
 
-	err := h.userService.UpdateProgress(ctx, req.UserId, int(req.ProgressAmount))
+	user, err := h.userService.UpdateProgress(ctx, req.UserId, int(req.ProgressAmount))
 	if err != nil {
 		return nil, apperrors.ToGRPCError(err)
 	}
 
-	message := &proto.MessageResponse{
-		IsSuccess: true,
-		Message:   "Update progress is succesful",
+	message := &proto.UpdateProgressResponse{
+		UserId: user.UserId,
+		Level:  int32(user.Level),
+		Coin:   int32(user.Coin),
 	}
 
 	return message, nil

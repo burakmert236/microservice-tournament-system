@@ -118,6 +118,110 @@ func (x *ClaimRewardRequest) GetTournamentId() string {
 	return ""
 }
 
+type EnterTournamentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TournamentId  string                 `protobuf:"bytes,1,opt,name=tournament_id,json=tournamentId,proto3" json:"tournament_id,omitempty"`
+	GroupId       string                 `protobuf:"bytes,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnterTournamentResponse) Reset() {
+	*x = EnterTournamentResponse{}
+	mi := &file_v1_grpc_tournament_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnterTournamentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnterTournamentResponse) ProtoMessage() {}
+
+func (x *EnterTournamentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_tournament_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnterTournamentResponse.ProtoReflect.Descriptor instead.
+func (*EnterTournamentResponse) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_tournament_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EnterTournamentResponse) GetTournamentId() string {
+	if x != nil {
+		return x.TournamentId
+	}
+	return ""
+}
+
+func (x *EnterTournamentResponse) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+type ClaimRewardResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TournamentId  string                 `protobuf:"bytes,1,opt,name=tournament_id,json=tournamentId,proto3" json:"tournament_id,omitempty"`
+	Reward        int32                  `protobuf:"varint,2,opt,name=reward,proto3" json:"reward,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClaimRewardResponse) Reset() {
+	*x = ClaimRewardResponse{}
+	mi := &file_v1_grpc_tournament_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClaimRewardResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClaimRewardResponse) ProtoMessage() {}
+
+func (x *ClaimRewardResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_grpc_tournament_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClaimRewardResponse.ProtoReflect.Descriptor instead.
+func (*ClaimRewardResponse) Descriptor() ([]byte, []int) {
+	return file_v1_grpc_tournament_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ClaimRewardResponse) GetTournamentId() string {
+	if x != nil {
+		return x.TournamentId
+	}
+	return ""
+}
+
+func (x *ClaimRewardResponse) GetReward() int32 {
+	if x != nil {
+		return x.Reward
+	}
+	return 0
+}
+
 var File_v1_grpc_tournament_proto protoreflect.FileDescriptor
 
 const file_v1_grpc_tournament_proto_rawDesc = "" +
@@ -127,10 +231,16 @@ const file_v1_grpc_tournament_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"R\n" +
 	"\x12ClaimRewardRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12#\n" +
-	"\rtournament_id\x18\x02 \x01(\tR\ftournamentId2\x9b\x01\n" +
-	"\x11TournamentService\x12F\n" +
-	"\x0fEnterTournament\x12\x1c.grpc.EnterTournamentRequest\x1a\x15.grpc.MessageResponse\x12>\n" +
-	"\vClaimReward\x12\x18.grpc.ClaimRewardRequest\x1a\x15.grpc.MessageResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
+	"\rtournament_id\x18\x02 \x01(\tR\ftournamentId\"Y\n" +
+	"\x17EnterTournamentResponse\x12#\n" +
+	"\rtournament_id\x18\x01 \x01(\tR\ftournamentId\x12\x19\n" +
+	"\bgroup_id\x18\x02 \x01(\tR\agroupId\"R\n" +
+	"\x13ClaimRewardResponse\x12#\n" +
+	"\rtournament_id\x18\x01 \x01(\tR\ftournamentId\x12\x16\n" +
+	"\x06reward\x18\x02 \x01(\x05R\x06reward2\xa7\x01\n" +
+	"\x11TournamentService\x12N\n" +
+	"\x0fEnterTournament\x12\x1c.grpc.EnterTournamentRequest\x1a\x1d.grpc.EnterTournamentResponse\x12B\n" +
+	"\vClaimReward\x12\x18.grpc.ClaimRewardRequest\x1a\x19.grpc.ClaimRewardResponseB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
 
 var (
 	file_v1_grpc_tournament_proto_rawDescOnce sync.Once
@@ -144,17 +254,18 @@ func file_v1_grpc_tournament_proto_rawDescGZIP() []byte {
 	return file_v1_grpc_tournament_proto_rawDescData
 }
 
-var file_v1_grpc_tournament_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_v1_grpc_tournament_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_v1_grpc_tournament_proto_goTypes = []any{
-	(*EnterTournamentRequest)(nil), // 0: grpc.EnterTournamentRequest
-	(*ClaimRewardRequest)(nil),     // 1: grpc.ClaimRewardRequest
-	(*MessageResponse)(nil),        // 2: grpc.MessageResponse
+	(*EnterTournamentRequest)(nil),  // 0: grpc.EnterTournamentRequest
+	(*ClaimRewardRequest)(nil),      // 1: grpc.ClaimRewardRequest
+	(*EnterTournamentResponse)(nil), // 2: grpc.EnterTournamentResponse
+	(*ClaimRewardResponse)(nil),     // 3: grpc.ClaimRewardResponse
 }
 var file_v1_grpc_tournament_proto_depIdxs = []int32{
 	0, // 0: grpc.TournamentService.EnterTournament:input_type -> grpc.EnterTournamentRequest
 	1, // 1: grpc.TournamentService.ClaimReward:input_type -> grpc.ClaimRewardRequest
-	2, // 2: grpc.TournamentService.EnterTournament:output_type -> grpc.MessageResponse
-	2, // 3: grpc.TournamentService.ClaimReward:output_type -> grpc.MessageResponse
+	2, // 2: grpc.TournamentService.EnterTournament:output_type -> grpc.EnterTournamentResponse
+	3, // 3: grpc.TournamentService.ClaimReward:output_type -> grpc.ClaimRewardResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -174,7 +285,7 @@ func file_v1_grpc_tournament_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_grpc_tournament_proto_rawDesc), len(file_v1_grpc_tournament_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

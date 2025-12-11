@@ -29,8 +29,8 @@ const (
 //
 // Services
 type TournamentServiceClient interface {
-	EnterTournament(ctx context.Context, in *EnterTournamentRequest, opts ...grpc.CallOption) (*MessageResponse, error)
-	ClaimReward(ctx context.Context, in *ClaimRewardRequest, opts ...grpc.CallOption) (*MessageResponse, error)
+	EnterTournament(ctx context.Context, in *EnterTournamentRequest, opts ...grpc.CallOption) (*EnterTournamentResponse, error)
+	ClaimReward(ctx context.Context, in *ClaimRewardRequest, opts ...grpc.CallOption) (*ClaimRewardResponse, error)
 }
 
 type tournamentServiceClient struct {
@@ -41,9 +41,9 @@ func NewTournamentServiceClient(cc grpc.ClientConnInterface) TournamentServiceCl
 	return &tournamentServiceClient{cc}
 }
 
-func (c *tournamentServiceClient) EnterTournament(ctx context.Context, in *EnterTournamentRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *tournamentServiceClient) EnterTournament(ctx context.Context, in *EnterTournamentRequest, opts ...grpc.CallOption) (*EnterTournamentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MessageResponse)
+	out := new(EnterTournamentResponse)
 	err := c.cc.Invoke(ctx, TournamentService_EnterTournament_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,9 +51,9 @@ func (c *tournamentServiceClient) EnterTournament(ctx context.Context, in *Enter
 	return out, nil
 }
 
-func (c *tournamentServiceClient) ClaimReward(ctx context.Context, in *ClaimRewardRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *tournamentServiceClient) ClaimReward(ctx context.Context, in *ClaimRewardRequest, opts ...grpc.CallOption) (*ClaimRewardResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MessageResponse)
+	out := new(ClaimRewardResponse)
 	err := c.cc.Invoke(ctx, TournamentService_ClaimReward_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -67,8 +67,8 @@ func (c *tournamentServiceClient) ClaimReward(ctx context.Context, in *ClaimRewa
 //
 // Services
 type TournamentServiceServer interface {
-	EnterTournament(context.Context, *EnterTournamentRequest) (*MessageResponse, error)
-	ClaimReward(context.Context, *ClaimRewardRequest) (*MessageResponse, error)
+	EnterTournament(context.Context, *EnterTournamentRequest) (*EnterTournamentResponse, error)
+	ClaimReward(context.Context, *ClaimRewardRequest) (*ClaimRewardResponse, error)
 	mustEmbedUnimplementedTournamentServiceServer()
 }
 
@@ -79,10 +79,10 @@ type TournamentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTournamentServiceServer struct{}
 
-func (UnimplementedTournamentServiceServer) EnterTournament(context.Context, *EnterTournamentRequest) (*MessageResponse, error) {
+func (UnimplementedTournamentServiceServer) EnterTournament(context.Context, *EnterTournamentRequest) (*EnterTournamentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EnterTournament not implemented")
 }
-func (UnimplementedTournamentServiceServer) ClaimReward(context.Context, *ClaimRewardRequest) (*MessageResponse, error) {
+func (UnimplementedTournamentServiceServer) ClaimReward(context.Context, *ClaimRewardRequest) (*ClaimRewardResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClaimReward not implemented")
 }
 func (UnimplementedTournamentServiceServer) mustEmbedUnimplementedTournamentServiceServer() {}

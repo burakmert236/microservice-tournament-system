@@ -36,7 +36,7 @@ const (
 type UserServiceClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	GetById(ctx context.Context, in *GetUserByIdRequest, opts ...grpc.CallOption) (*GetUserByIdResponse, error)
-	UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*MessageResponse, error)
+	UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*UpdateProgressResponse, error)
 	CollectTournamentReward(ctx context.Context, in *CollectTournamentRewardRequest, opts ...grpc.CallOption) (*MessageResponse, error)
 	// Reservation methods for tournament entry
 	ReserveCoins(ctx context.Context, in *ReserveCoinsRequest, opts ...grpc.CallOption) (*MessageResponse, error)
@@ -72,9 +72,9 @@ func (c *userServiceClient) GetById(ctx context.Context, in *GetUserByIdRequest,
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *userServiceClient) UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*UpdateProgressResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MessageResponse)
+	out := new(UpdateProgressResponse)
 	err := c.cc.Invoke(ctx, UserService_UpdateProgress_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (c *userServiceClient) RollbackReservation(ctx context.Context, in *Rollbac
 type UserServiceServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	GetById(context.Context, *GetUserByIdRequest) (*GetUserByIdResponse, error)
-	UpdateProgress(context.Context, *UpdateProgressRequest) (*MessageResponse, error)
+	UpdateProgress(context.Context, *UpdateProgressRequest) (*UpdateProgressResponse, error)
 	CollectTournamentReward(context.Context, *CollectTournamentRewardRequest) (*MessageResponse, error)
 	// Reservation methods for tournament entry
 	ReserveCoins(context.Context, *ReserveCoinsRequest) (*MessageResponse, error)
@@ -152,7 +152,7 @@ func (UnimplementedUserServiceServer) CreateUser(context.Context, *CreateUserReq
 func (UnimplementedUserServiceServer) GetById(context.Context, *GetUserByIdRequest) (*GetUserByIdResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetById not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateProgress(context.Context, *UpdateProgressRequest) (*MessageResponse, error) {
+func (UnimplementedUserServiceServer) UpdateProgress(context.Context, *UpdateProgressRequest) (*UpdateProgressResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProgress not implemented")
 }
 func (UnimplementedUserServiceServer) CollectTournamentReward(context.Context, *CollectTournamentRewardRequest) (*MessageResponse, error) {

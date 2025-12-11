@@ -21,9 +21,9 @@ import (
 type TournamentService interface {
 	CreateTournament(ctx context.Context, startsAt time.Time) (*models.Tournament, *apperrors.AppError)
 	CreateCurrentTournament(ctx context.Context) (*models.Tournament, *apperrors.AppError)
-	EnterTournament(ctx context.Context, userId string) *apperrors.AppError
+	EnterTournament(ctx context.Context, userId string) (string, string, *apperrors.AppError)
 	UpdateParticipationScore(ctx context.Context, userId string, levelIncrease int) *apperrors.AppError
-	ClaimReward(ctx context.Context, userId, tournamentId string) *apperrors.AppError
+	ClaimReward(ctx context.Context, userId, tournamentId string) (string, int, *apperrors.AppError)
 }
 
 type tournamentService struct {
@@ -98,21 +98,21 @@ func (s *tournamentService) CreateCurrentTournament(ctx context.Context) (*model
 func (s *tournamentService) EnterTournament(
 	ctx context.Context,
 	userId string,
-) *apperrors.AppError {
+) (string, string, *apperrors.AppError) {
 	// Get active tournament
 	tournament, err := s.tournamentRepo.GetActiveTournament(ctx)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 	s.logger.Info(fmt.Sprintf("current tournament is fetched: %s", tournament.TournamentId))
 
 	// Check existing participation
 	existingParticipation, err := s.participationRepo.GetByUserAndTournament(ctx, userId, tournament.TournamentId)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 	if existingParticipation != nil {
-		return nil
+		return existingParticipation.TournamentId, existingParticipation.GroupId, nil
 	}
 
 	// Fetch user
@@ -120,18 +120,18 @@ func (s *tournamentService) EnterTournament(
 		UserId: userId,
 	})
 	if userClientErr != nil {
-		return apperrors.Wrap(userClientErr, apperrors.CodeGrpcCallError, "failed to call grpc user service getById")
+		return "", "", apperrors.Wrap(userClientErr, apperrors.CodeGrpcCallError, "failed to call grpc user service getById")
 	}
 
 	// Handle validation and reservation
 	if err := s.handleBeforeTournamentEntryOperations(ctx, userId, tournament.TournamentId, int(userResponse.Level), tournament); err != nil {
-		return err
+		return "", "", err
 	}
 
 	// Get available group
 	group, err := s.findOrCreateAvailableGroup(ctx, tournament)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	// Build transaction for participation
@@ -145,7 +145,7 @@ func (s *tournamentService) EnterTournament(
 	s.setDefaultValuesForParticipation(participation)
 	putParticipationTransaction, err := s.participationRepo.GetTransactionForAddingParticipation(ctx, participation)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	updateGroupTransaction := s.groupRepo.GetTransactionForAddingParticipant(ctx, group.GroupId, tournament.TournamentId)
@@ -157,14 +157,14 @@ func (s *tournamentService) EnterTournament(
 	transactionErr := s.transactionRepo.Execute(ctx, transactionBuilder)
 
 	if err = s.handleAfterTournamentEntryOperations(ctx, transactionErr, userId, tournament.TournamentId); err != nil {
-		return err
+		return "", "", err
 	}
 
 	if err = s.eventPublisher.PublishTournamentEntered(ctx, userId, userResponse.DisplayName, group.GroupId, tournament.TournamentId); err != nil {
-		return err
+		return "", "", err
 	}
 
-	return nil
+	return tournament.TournamentId, group.GroupId, nil
 }
 
 func (s *tournamentService) UpdateParticipationScore(
@@ -198,28 +198,31 @@ func (s *tournamentService) UpdateParticipationScore(
 	return nil
 }
 
-func (s *tournamentService) ClaimReward(ctx context.Context, userId, tournamentId string) *apperrors.AppError {
+func (s *tournamentService) ClaimReward(
+	ctx context.Context,
+	userId, tournamentId string,
+) (string, int, *apperrors.AppError) {
 	participation, err := s.participationRepo.UpdateRewardProcessing(ctx, userId, tournamentId)
 	if err != nil {
-		return err
+		return tournamentId, 0, err
 	}
 	if participation == nil {
-		return tournamenterrors.ClaimRewardError()
+		return tournamentId, 0, tournamenterrors.ClaimRewardError()
 	}
 
 	reward, err := s.handleRewardClaim(ctx, userId, participation)
 	if err != nil {
 		if _, err := s.participationRepo.UpdateRewardUnclaimed(ctx, userId, tournamentId); err != nil {
-			return err
+			return participation.TournamentId, 0, err
 		}
-		return err
+		return participation.TournamentId, 0, err
 	}
 
 	if reward <= 0 {
 		if _, err := s.participationRepo.UpdateRewardClaimed(ctx, userId, tournamentId); err != nil {
-			return err
+			return participation.TournamentId, 0, err
 		}
-		return nil
+		return participation.TournamentId, reward, nil
 	}
 
 	addCoinResponse, addCoinErr := s.userClient.CollectTournamentReward(ctx, &protogrpc.CollectTournamentRewardRequest{
@@ -229,15 +232,18 @@ func (s *tournamentService) ClaimReward(ctx context.Context, userId, tournamentI
 	})
 	if addCoinResponse == nil || addCoinErr != nil {
 		if _, err := s.participationRepo.UpdateRewardUnclaimed(ctx, userId, tournamentId); err != nil {
-			return err
+			return participation.TournamentId, reward, err
 		}
-		return apperrors.Wrap(err, apperrors.CodeGrpcCallError, "failed to call grpc user service collectTournamentReward")
+		return participation.TournamentId,
+			reward,
+			apperrors.Wrap(err, apperrors.CodeGrpcCallError, "failed to call grpc user service collectTournamentReward")
 	}
 
 	if _, err := s.participationRepo.UpdateRewardClaimed(ctx, userId, tournamentId); err != nil {
-		return err
+		return participation.TournamentId, reward, err
 	}
-	return nil
+
+	return participation.TournamentId, reward, nil
 }
 
 // Private methods

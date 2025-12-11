@@ -35,11 +35,11 @@ func MetaSK() string {
 }
 
 func TournamentGSI1PK() string {
-	return "CURRENT_TOURNAMENT"
+	return "TOURNAMENT"
 }
 
 func StartTimeGSI1SK(startTime string) string {
-	return fmt.Sprintf("START#%s", startTime)
+	return startTime
 }
 
 func ExtractTournamentID(pk string) (string, error) {

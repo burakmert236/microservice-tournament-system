@@ -19,7 +19,7 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, displayName string) (*models.User, *apperrors.AppError)
 	GetById(ctx context.Context, userId string) (*models.User, *apperrors.AppError)
-	UpdateProgress(ctx context.Context, userId string, levelIncrease int) *apperrors.AppError
+	UpdateProgress(ctx context.Context, userId string, levelIncrease int) (*models.User, *apperrors.AppError)
 	CollectTournamentReward(ctx context.Context, userId, tournamentId string, coin int) *apperrors.AppError
 
 	// Reservation methods
@@ -83,14 +83,18 @@ func (s *userService) GetById(ctx context.Context, userId string) (*models.User,
 	return user, nil
 }
 
-func (s *userService) UpdateProgress(ctx context.Context, userId string, levelIncrease int) *apperrors.AppError {
+func (s *userService) UpdateProgress(ctx context.Context, userId string, levelIncrease int) (*models.User, *apperrors.AppError) {
 	reward := levelIncrease * s.getCoinRewardPerLevelUpgrade()
-	newLevel, err := s.userRepo.UpdateLevelProgress(ctx, userId, levelIncrease, reward)
+	user, err := s.userRepo.UpdateLevelProgress(ctx, userId, levelIncrease, reward)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return s.publisher.PublishUserLevelUp(ctx, userId, levelIncrease, newLevel)
+	if err := s.publisher.PublishUserLevelUp(ctx, userId, levelIncrease, user.Level); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (s *userService) CollectTournamentReward(
