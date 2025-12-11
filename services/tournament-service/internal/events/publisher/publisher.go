@@ -33,7 +33,7 @@ func (p *EventPublisher) PublishTournamentEntered(
 		DisplayName:  displayName,
 		GroupId:      groupId,
 		TournamentId: tournamentId,
-		TimeStamp:    time.Now().Unix(),
+		TimeStamp:    time.Now().UTC().Unix(),
 	}
 
 	if err := p.publisher.PublishProto(ctx, commonevents.TournamentEntered, event); err != nil {
@@ -55,7 +55,7 @@ func (p *EventPublisher) PublishTournamentParticipationScoreUpdated(
 		GroupId:      groupId,
 		TournamentId: tournamentId,
 		NewScore:     int32(newScore),
-		TimeStamp:    time.Now().Unix(),
+		TimeStamp:    time.Now().UTC().Unix(),
 	}
 
 	if err := p.publisher.PublishProto(ctx, commonevents.TournamentParticipationScoreUpdated, event); err != nil {

@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func ToGRPCError(err error) error {
+func ToGRPCError(err *AppError) error {
 	if err == nil {
 		return nil
 	}

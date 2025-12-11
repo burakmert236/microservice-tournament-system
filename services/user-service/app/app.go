@@ -41,45 +41,45 @@ func New(ctx context.Context, cfg *config.Config) (*App, *apperrors.AppError) {
 	}
 
 	if err := app.initLogger(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init logger")
+		return nil, err
 	}
 
 	if err := app.initDatabase(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init database")
+		return nil, err
 	}
 
 	if err := app.initNATS(ctx); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init nats client")
+		return nil, err
 	}
 
 	if err := app.initMessaging(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init messaging")
+		return nil, err
 	}
 
 	if err := app.initGRPC(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init grpc server")
+		return nil, err
 	}
 
 	return app, nil
 }
 
-func (a *App) initLogger() error {
+func (a *App) initLogger() *apperrors.AppError {
 	a.logger = logger.Development("user-service")
 	return nil
 }
 
-func (a *App) initDatabase() error {
+func (a *App) initDatabase() *apperrors.AppError {
 	dynamoClient, err := database.NewDynamoDBClient(a.cfg)
 	if err != nil {
 		a.logger.Error("Failed to create DynamoDB client: %v", err)
-		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create dynamodb client")
+		return err
 	}
 
 	a.db = dynamoClient
 	return nil
 }
 
-func (a *App) initNATS(ctx context.Context) error {
+func (a *App) initNATS(ctx context.Context) *apperrors.AppError {
 	natsClient, err := natsjetstream.NewClient(&natsjetstream.Config{
 		URL:           a.cfg.NATS.URL,
 		MaxReconnect:  a.cfg.NATS.MaxReconnect,
@@ -87,7 +87,7 @@ func (a *App) initNATS(ctx context.Context) error {
 		Timeout:       time.Duration(a.cfg.NATS.TimeoutSeconds) * time.Second,
 	})
 	if err != nil {
-		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create nats client")
+		return err
 	}
 
 	a.natsClient = natsClient
@@ -111,12 +111,12 @@ func (a *App) initNATS(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initMessaging() error {
+func (a *App) initMessaging() *apperrors.AppError {
 	a.eventPublisher = events.NewEventPublisher(a.natsClient, a.logger)
 	return nil
 }
 
-func (a *App) initGRPC() error {
+func (a *App) initGRPC() *apperrors.AppError {
 	userRepo := repository.NewUserRepository(a.db)
 	reservationRepo := repository.NewReservationRepository(a.db)
 	rewardClaimRepository := repository.NewRewardClaimRepository(a.db)
@@ -143,7 +143,7 @@ func (a *App) initGRPC() error {
 	return nil
 }
 
-func (a *App) Start() error {
+func (a *App) Start() *apperrors.AppError {
 	go func() {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", a.cfg.Server.GRPCPort))
 		if err != nil {
@@ -161,7 +161,7 @@ func (a *App) Start() error {
 	return nil
 }
 
-func (a *App) Stop() error {
+func (a *App) Stop() *apperrors.AppError {
 	a.logger.Info("Stopping application...")
 
 	if a.grpcServer != nil {
@@ -179,7 +179,7 @@ func (a *App) Stop() error {
 }
 
 func (a *App) loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	start := time.Now()
+	start := time.Now().UTC()
 	resp, err := handler(ctx, req)
 	a.logger.Info(fmt.Sprintf("Method: %s, Duration: %v", info.FullMethod, time.Since(start)))
 	return resp, err

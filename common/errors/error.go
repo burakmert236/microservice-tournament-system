@@ -25,6 +25,7 @@ func New(code, message string) *AppError {
 	return &AppError{
 		Code:    code,
 		Message: message,
+		Err:     fmt.Errorf(""),
 	}
 }
 

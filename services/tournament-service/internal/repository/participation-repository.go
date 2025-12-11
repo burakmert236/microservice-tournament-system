@@ -216,7 +216,7 @@ func (s *participationRepo) GetTransactionForAddingParticipation(
 ) (types.Put, *apperrors.AppError) {
 	participation.PK = models.UserPK(participation.UserId)
 	participation.SK = models.TournamentPK(participation.TournamentId)
-	participation.CreatedAt = time.Now()
+	participation.CreatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(participation)
 	if err != nil {

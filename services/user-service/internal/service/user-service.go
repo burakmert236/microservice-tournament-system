@@ -23,9 +23,9 @@ type UserService interface {
 	CollectTournamentReward(ctx context.Context, userId, tournamentId string, coin int) *apperrors.AppError
 
 	// Reservation methods
-	ReserveCoins(ctx context.Context, userId string, amount int, reservationId string) *apperrors.AppError
-	ConfirmReservation(ctx context.Context, reservationId string) *apperrors.AppError
-	RollbackReservation(ctx context.Context, reservationId string) *apperrors.AppError
+	ReserveCoins(ctx context.Context, userId string, amount int, tournamentId string) *apperrors.AppError
+	ConfirmReservation(ctx context.Context, userId, tournamentId string) *apperrors.AppError
+	RollbackReservation(ctx context.Context, userId, tournamentId string) *apperrors.AppError
 }
 
 type userService struct {
@@ -124,15 +124,15 @@ func (s *userService) CollectTournamentReward(
 
 // Reservation methods
 
-func (s *userService) ReserveCoins(ctx context.Context, userId string, amount int, reservationId string) *apperrors.AppError {
-	existing, err := s.reservationRepo.GetById(ctx, reservationId)
-	if err == nil && existing != nil {
+func (s *userService) ReserveCoins(ctx context.Context, userId string, amount int, tournamentId string) *apperrors.AppError {
+	existing, err := s.reservationRepo.GetById(ctx, userId, tournamentId)
+	if existing != nil {
 		if existing.Status == models.ReservationStatusConfirmed || existing.Status == models.ReservationStatusReserved {
 			return nil
 		}
 	}
 
-	reservation := s.getDefaultReservation(userId, reservationId, amount)
+	reservation := s.getDefaultReservation(userId, tournamentId, amount)
 	reservationItemPutTransaction, err := s.reservationRepo.GetCreateTransaction(ctx, &reservation)
 	if err != nil {
 		return err
@@ -147,11 +147,18 @@ func (s *userService) ReserveCoins(ctx context.Context, userId string, amount in
 	transactionErr := s.transactionRepo.Execute(ctx, transactionBuilder)
 
 	if transactionErr != nil {
-		var txErr *types.TransactionCanceledException
-		if errors.As(transactionErr, &txErr) {
-			for _, reason := range txErr.CancellationReasons {
-				if reason.Code != nil && *reason.Code == "ConditionalCheckFailed" {
-					return usererrors.WrapCoinReservationError(txErr)
+		if transactionErr.Err != nil {
+			var txErr *types.TransactionCanceledException
+			if errors.As(transactionErr.Err, &txErr) {
+				for i, reason := range txErr.CancellationReasons {
+					switch i {
+					case 0:
+						if reason.Code != nil && *reason.Code == "ConditionalCheckFailed" {
+							return usererrors.WrapInsufficientCoinError(txErr)
+						}
+					case 1:
+						return nil
+					}
 				}
 			}
 		}
@@ -161,14 +168,17 @@ func (s *userService) ReserveCoins(ctx context.Context, userId string, amount in
 	return nil
 }
 
-func (s *userService) ConfirmReservation(ctx context.Context, reservationId string) *apperrors.AppError {
-	return s.reservationRepo.UpdateStatus(ctx, reservationId, models.ReservationStatusConfirmed)
+func (s *userService) ConfirmReservation(ctx context.Context, userId, tournamentId string) *apperrors.AppError {
+	return s.reservationRepo.UpdateStatus(ctx, userId, tournamentId, models.ReservationStatusConfirmed)
 }
 
-func (s *userService) RollbackReservation(ctx context.Context, reservationId string) *apperrors.AppError {
-	reservation, err := s.reservationRepo.GetById(ctx, reservationId)
+func (s *userService) RollbackReservation(ctx context.Context, userId, tournamentId string) *apperrors.AppError {
+	reservation, err := s.reservationRepo.GetById(ctx, userId, tournamentId)
 	if err != nil {
 		return err
+	}
+	if reservation == nil {
+		return nil
 	}
 
 	if reservation.Status == models.ReservationStatusRolledBack {
@@ -180,7 +190,7 @@ func (s *userService) RollbackReservation(ctx context.Context, reservationId str
 	}
 
 	coinAdditionTransaction := s.userRepo.GetCoinAdditionTransaction(ctx, reservation.UserId, int(reservation.Amount))
-	updateReservationStatusTransaction := s.reservationRepo.GetUpdateStatusTransaction(ctx, reservationId, models.ReservationStatusRolledBack)
+	updateReservationStatusTransaction := s.reservationRepo.GetUpdateStatusTransaction(ctx, userId, tournamentId, models.ReservationStatusRolledBack)
 
 	transactionBuilder := database.NewTransactionBuilder()
 	transactionBuilder.AddUpdate(coinAdditionTransaction)
@@ -203,17 +213,17 @@ func (s *userService) getDefaultUser() *models.User {
 	}
 }
 
-func (s *userService) getDefaultReservation(userId, reservationId string, amount int) models.Reservation {
+func (s *userService) getDefaultReservation(userId, tournamentId string, amount int) models.Reservation {
 	now := time.Now().UTC()
 
 	reservation := &models.Reservation{
-		ReservationId: reservationId,
-		UserId:        userId,
-		Amount:        int64(amount),
-		Status:        models.ReservationStatusReserved,
-		Purpose:       "TOURNAMENT_ENTRY",
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		UserId:       userId,
+		TournamentId: tournamentId,
+		Amount:       int64(amount),
+		Status:       models.ReservationStatusReserved,
+		Purpose:      "TOURNAMENT_ENTRY",
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 
 	return *reservation

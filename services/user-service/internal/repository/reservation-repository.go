@@ -14,12 +14,12 @@ import (
 )
 
 type ReservationRepository interface {
-	GetById(ctx context.Context, reservationId string) (*models.Reservation, *apperrors.AppError)
-	UpdateStatus(ctx context.Context, reservationId string, status models.ReservationStatus) *apperrors.AppError
+	GetById(ctx context.Context, userId, tournamentId string) (*models.Reservation, *apperrors.AppError)
+	UpdateStatus(ctx context.Context, userId, tournamentId string, status models.ReservationStatus) *apperrors.AppError
 
 	// Transaction operations
 	GetCreateTransaction(ctx context.Context, reservation *models.Reservation) (types.Put, *apperrors.AppError)
-	GetUpdateStatusTransaction(ctx context.Context, reservationId string, status models.ReservationStatus) types.Update
+	GetUpdateStatusTransaction(ctx context.Context, userId, tournamentId string, status models.ReservationStatus) types.Update
 }
 
 type reservationRepo struct {
@@ -30,12 +30,12 @@ func NewReservationRepository(db *database.DynamoDBClient) ReservationRepository
 	return &reservationRepo{db: db}
 }
 
-func (r *reservationRepo) GetById(ctx context.Context, reservationId string) (*models.Reservation, *apperrors.AppError) {
+func (r *reservationRepo) GetById(ctx context.Context, userId, tournamentId string) (*models.Reservation, *apperrors.AppError) {
 	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{Value: models.ReservationPK(reservationId)},
-			"SK": &types.AttributeValueMemberS{Value: models.ReservationSK()},
+			"PK": &types.AttributeValueMemberS{Value: models.ReservationPK(userId)},
+			"SK": &types.AttributeValueMemberS{Value: models.ReservationSK(tournamentId)},
 		},
 	})
 
@@ -57,10 +57,10 @@ func (r *reservationRepo) GetById(ctx context.Context, reservationId string) (*m
 
 func (r *reservationRepo) UpdateStatus(
 	ctx context.Context,
-	reservationId string,
+	userId, tournamentId string,
 	status models.ReservationStatus,
 ) *apperrors.AppError {
-	transactionInfo := r.GetUpdateStatusTransaction(ctx, reservationId, status)
+	transactionInfo := r.GetUpdateStatusTransaction(ctx, userId, tournamentId, status)
 
 	_, err := r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName:                 aws.String(r.db.Table()),
@@ -70,14 +70,18 @@ func (r *reservationRepo) UpdateStatus(
 		ExpressionAttributeValues: transactionInfo.ExpressionAttributeValues,
 	})
 
-	return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update reservation status")
+	if err != nil {
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update reservation status")
+	}
+
+	return nil
 }
 
 // Transaction Operations
 
 func (r *reservationRepo) GetCreateTransaction(ctx context.Context, reservation *models.Reservation) (types.Put, *apperrors.AppError) {
-	reservation.PK = models.ReservationPK(reservation.ReservationId)
-	reservation.SK = models.ReservationSK()
+	reservation.PK = models.ReservationPK(reservation.UserId)
+	reservation.SK = models.ReservationSK(reservation.TournamentId)
 	reservation.CreatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(reservation)
@@ -92,12 +96,12 @@ func (r *reservationRepo) GetCreateTransaction(ctx context.Context, reservation 
 	}, nil
 }
 
-func (r *reservationRepo) GetUpdateStatusTransaction(ctx context.Context, reservationId string, status models.ReservationStatus) types.Update {
+func (r *reservationRepo) GetUpdateStatusTransaction(ctx context.Context, userId, tournamentId string, status models.ReservationStatus) types.Update {
 	return types.Update{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{Value: models.ReservationPK(reservationId)},
-			"SK": &types.AttributeValueMemberS{Value: models.ReservationSK()},
+			"PK": &types.AttributeValueMemberS{Value: models.ReservationPK(userId)},
+			"SK": &types.AttributeValueMemberS{Value: models.ReservationSK(tournamentId)},
 		},
 		UpdateExpression: aws.String("SET #status = :status, updatedAt = :now"),
 		ExpressionAttributeNames: map[string]string{

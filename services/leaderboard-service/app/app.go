@@ -11,6 +11,7 @@ import (
 
 	"github.com/burakmert236/goodswipe-common/cache"
 	"github.com/burakmert236/goodswipe-common/config"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	protogrpc "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-common/natsjetstream"
@@ -32,41 +33,41 @@ type App struct {
 	cleanup []func() error
 }
 
-func New(ctx context.Context, cfg *config.Config) (*App, error) {
+func New(ctx context.Context, cfg *config.Config) (*App, *apperrors.AppError) {
 	app := &App{
 		cfg:     cfg,
 		cleanup: make([]func() error, 0),
 	}
 
 	if err := app.initLogger(); err != nil {
-		return nil, fmt.Errorf("failed to init logger: %w", err)
+		return nil, err
 	}
 
 	if err := app.initRedis(); err != nil {
-		return nil, fmt.Errorf("failed to init Redis: %w", err)
+		return nil, err
 	}
 
 	if err := app.initNATS(); err != nil {
-		return nil, fmt.Errorf("failed to init NATS: %w", err)
+		return nil, err
 	}
 
 	if err := app.initGRPC(); err != nil {
-		return nil, fmt.Errorf("failed to init gRPC: %w", err)
+		return nil, err
 	}
 
 	if err := app.initMessaging(ctx); err != nil {
-		return nil, fmt.Errorf("failed to init messaging: %w", err)
+		return nil, err
 	}
 
 	return app, nil
 }
 
-func (a *App) initLogger() error {
+func (a *App) initLogger() *apperrors.AppError {
 	a.logger = logger.Development("leaderboard-service")
 	return nil
 }
 
-func (a *App) initRedis() error {
+func (a *App) initRedis() *apperrors.AppError {
 	redisClient, err := cache.NewRedisClient(a.cfg.Redis)
 	if err != nil {
 		a.logger.Fatal(fmt.Sprintf("Redis client could not started: %s", err))
@@ -77,7 +78,7 @@ func (a *App) initRedis() error {
 	return nil
 }
 
-func (a *App) initNATS() error {
+func (a *App) initNATS() *apperrors.AppError {
 	natsClient, err := natsjetstream.NewClient(&natsjetstream.Config{
 		URL:           a.cfg.NATS.URL,
 		MaxReconnect:  a.cfg.NATS.MaxReconnect,
@@ -94,12 +95,12 @@ func (a *App) initNATS() error {
 	return nil
 }
 
-func (a *App) initMessaging(ctx context.Context) error {
+func (a *App) initMessaging(ctx context.Context) *apperrors.AppError {
 	a.eventSubscriber = events.NewEventSubscriber(a.natsClient, a.leaderboardService, a.logger)
 	return a.eventSubscriber.Start(ctx)
 }
 
-func (a *App) initGRPC() error {
+func (a *App) initGRPC() *apperrors.AppError {
 	leaderboardRepo := repository.NewLeaderboardRepository(a.redisClient, a.logger)
 
 	a.leaderboardService = service.NewLeaderboardService(
@@ -119,7 +120,7 @@ func (a *App) initGRPC() error {
 	return nil
 }
 
-func (a *App) Start() error {
+func (a *App) Start() *apperrors.AppError {
 	go func() {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", a.cfg.Server.GRPCPort))
 		if err != nil {
@@ -137,7 +138,7 @@ func (a *App) Start() error {
 	return nil
 }
 
-func (a *App) Stop() error {
+func (a *App) Stop() *apperrors.AppError {
 	a.logger.Info("Stopping application...")
 
 	if a.grpcServer != nil {
@@ -155,7 +156,7 @@ func (a *App) Stop() error {
 }
 
 func (a *App) loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	start := time.Now()
+	start := time.Now().UTC()
 	resp, err := handler(ctx, req)
 	a.logger.Info(fmt.Sprintf("Method: %s, Duration: %v", info.FullMethod, time.Since(start)))
 	return resp, err

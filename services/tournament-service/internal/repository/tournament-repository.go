@@ -34,7 +34,7 @@ func (r *tournamentRepo) Create(ctx context.Context, tournament *models.Tourname
 	tournament.SK = models.MetaSK()
 	tournament.GSI1PK = models.TournamentGSI1PK()
 	tournament.GSI1SK = models.StartTimeGSI1SK(tournament.StartsAt.Format(time.RFC3339))
-	tournament.CreatedAt = time.Now()
+	tournament.CreatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(tournament)
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *tournamentRepo) GetById(ctx context.Context, tournamentId string) (*mod
 }
 
 func (r *tournamentRepo) Update(ctx context.Context, Tournament *models.Tournament) *apperrors.AppError {
-	Tournament.UpdatedAt = time.Now()
+	Tournament.UpdatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(Tournament)
 	if err != nil {

@@ -2,13 +2,13 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/burakmert236/goodswipe-common/config"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 )
 
 type DynamoDBClient struct {
@@ -16,7 +16,7 @@ type DynamoDBClient struct {
 	TableName string
 }
 
-func NewDynamoDBClient(cfg *config.Config) (*DynamoDBClient, error) {
+func NewDynamoDBClient(cfg *config.Config) (*DynamoDBClient, *apperrors.AppError) {
 	ctx := context.Background()
 
 	var awsCfg aws.Config
@@ -43,7 +43,7 @@ func NewDynamoDBClient(cfg *config.Config) (*DynamoDBClient, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to load AWS config")
 	}
 
 	client := dynamodb.NewFromConfig(awsCfg, func(o *dynamodb.Options) {
@@ -56,7 +56,6 @@ func NewDynamoDBClient(cfg *config.Config) (*DynamoDBClient, error) {
 	}, nil
 }
 
-// Helper method to get table name
 func (c *DynamoDBClient) Table() string {
 	return c.TableName
 }

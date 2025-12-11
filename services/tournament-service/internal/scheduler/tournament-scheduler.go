@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-tournament-service/internal/service"
 )
 
@@ -18,7 +19,7 @@ func NewTournamentScheduler(tournamentService service.TournamentService) *Tourna
 	}
 }
 
-func (ts *TournamentScheduler) CreateTournament(ctx context.Context, startsAt time.Time) error {
+func (ts *TournamentScheduler) CreateTournament(ctx context.Context, startsAt time.Time) *apperrors.AppError {
 	log.Println("Creating daily tournament...")
 
 	tournament, err := ts.tournamentService.CreateTournament(ctx, startsAt)
@@ -31,7 +32,7 @@ func (ts *TournamentScheduler) CreateTournament(ctx context.Context, startsAt ti
 	return nil
 }
 
-func (ts *TournamentScheduler) CreateCurrentTournamentIfNotExists(ctx context.Context) error {
+func (ts *TournamentScheduler) CreateCurrentTournamentIfNotExists(ctx context.Context) *apperrors.AppError {
 	log.Println("Creating current tournament if not exists...")
 
 	tournament, err := ts.tournamentService.CreateCurrentTournament(ctx)

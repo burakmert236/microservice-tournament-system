@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/burakmert236/goodswipe-common/cache"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-common/logger"
+	leaderboarderrors "github.com/burakmert236/goodswipe-leaderboard-service/internal/errors"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -52,7 +54,7 @@ func userTournamentField(userId, tournamentId string) string {
 // Write Operations
 
 // AddUserToTournament adds user to tournament with 0 score
-func (r *LeaderboardRepository) AddGlobalUser(ctx context.Context, userId, displayName string) error {
+func (r *LeaderboardRepository) AddGlobalUser(ctx context.Context, userId, displayName string) *apperrors.AppError {
 	pipe := r.client.Pipeline()
 
 	pipe.HSet(ctx, usernamesHashKey(), userId, displayName)
@@ -64,7 +66,7 @@ func (r *LeaderboardRepository) AddGlobalUser(ctx context.Context, userId, displ
 		Member: userId,
 	}
 	if err := pipe.ZAdd(ctx, globalLeaderboardKey, member).Err(); err != nil {
-		return fmt.Errorf("failed to add user to global leaderboard: %w", err)
+		return leaderboarderrors.UserNotExistsInAnyGroup()
 	}
 	pipe.ZRemRangeByRank(ctx, globalLeaderboardKey, 0, -GlobalLeaderboardLimit-1)
 
@@ -73,7 +75,7 @@ func (r *LeaderboardRepository) AddGlobalUser(ctx context.Context, userId, displ
 			"error", err,
 			"user_id", userId,
 		)
-		return fmt.Errorf("failed to update tournament score: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to update tournament score")
 	}
 
 	return nil
@@ -82,7 +84,7 @@ func (r *LeaderboardRepository) AddGlobalUser(ctx context.Context, userId, displ
 func (r *LeaderboardRepository) AddUserToTournament(
 	ctx context.Context,
 	userId, displayName, groupId, tournamentId string,
-) error {
+) *apperrors.AppError {
 	pipe := r.client.Pipeline()
 
 	pipe.HSet(ctx, usernamesHashKey(), userId, displayName)
@@ -96,7 +98,7 @@ func (r *LeaderboardRepository) AddUserToTournament(
 		Member: userId,
 	}
 	if err := pipe.ZAdd(ctx, leaderboardKey, member).Err(); err != nil {
-		return fmt.Errorf("failed to add user to group leaderboard: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to add user to group leaderboard")
 	}
 	pipe.Expire(ctx, leaderboardKey, DefaultTTL)
 
@@ -106,7 +108,7 @@ func (r *LeaderboardRepository) AddUserToTournament(
 			"user_id", userId,
 			"tournament_id", tournamentId,
 		)
-		return fmt.Errorf("failed to update tournament score: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to update tournament score")
 	}
 
 	return nil
@@ -117,12 +119,12 @@ func (r *LeaderboardRepository) UpdateTournamentScore(
 	ctx context.Context,
 	userId, tournamentId string,
 	score int,
-) error {
+) *apperrors.AppError {
 	groupId, err := r.client.HGet(ctx, userGroupMappingsHashKey(), userTournamentField(userId, tournamentId)).Result()
 	if err == redis.Nil {
-		return fmt.Errorf("user not in any group for this tournament")
+		return leaderboarderrors.UserNotExistsInAnyGroup()
 	} else if err != nil {
-		return fmt.Errorf("failed to get user group: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to get user group")
 	}
 
 	pipe := r.client.Pipeline()
@@ -144,7 +146,7 @@ func (r *LeaderboardRepository) UpdateTournamentScore(
 			"user_id", userId,
 			"tournament_id", tournamentId,
 		)
-		return fmt.Errorf("failed to update tournament score: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to update tournament score")
 	}
 
 	return nil
@@ -184,7 +186,7 @@ func (r *LeaderboardRepository) generateLeaderboardEntryList(ctx context.Context
 }
 
 // GetGlobalLeaderboard returns top N users from global leaderboard
-func (r *LeaderboardRepository) GetGlobalLeaderboard(ctx context.Context) ([]LeaderboardEntry, error) {
+func (r *LeaderboardRepository) GetGlobalLeaderboard(ctx context.Context) ([]LeaderboardEntry, *apperrors.AppError) {
 	r.logger.Debug("Getting global leaderboard")
 
 	result, err := r.client.ZRevRangeWithScores(ctx, globalLeaderboardKey(), 0, GlobalLeaderboardLimit-1).Result()
@@ -192,7 +194,7 @@ func (r *LeaderboardRepository) GetGlobalLeaderboard(ctx context.Context) ([]Lea
 		r.logger.Error("Failed to get global leaderboard",
 			"error", err,
 		)
-		return nil, fmt.Errorf("failed to get global leaderboard: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to get global leaderboard")
 	}
 
 	return r.generateLeaderboardEntryList(ctx, result), nil
@@ -202,7 +204,7 @@ func (r *LeaderboardRepository) GetGlobalLeaderboard(ctx context.Context) ([]Lea
 func (r *LeaderboardRepository) GetGroupLeaderboard(
 	ctx context.Context,
 	userId, tournamentId string,
-) ([]LeaderboardEntry, error) {
+) ([]LeaderboardEntry, *apperrors.AppError) {
 	r.logger.Debug("Getting group leaderboard",
 		"tournament_id", tournamentId,
 		"user_id", userId,
@@ -210,9 +212,9 @@ func (r *LeaderboardRepository) GetGroupLeaderboard(
 
 	groupId, err := r.client.HGet(ctx, userGroupMappingsHashKey(), userTournamentField(userId, tournamentId)).Result()
 	if err == redis.Nil {
-		return nil, fmt.Errorf("user not in any group for this tournament")
+		return nil, leaderboarderrors.UserNotExistsInAnyGroup()
 	} else if err != nil {
-		return nil, fmt.Errorf("failed to get user group: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to get user group")
 	}
 
 	key := groupLeaderboardKey(tournamentId, groupId)
@@ -224,7 +226,7 @@ func (r *LeaderboardRepository) GetGroupLeaderboard(
 			"tournament_id", tournamentId,
 			"group_id", groupId,
 		)
-		return nil, fmt.Errorf("failed to get group leaderboard: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to get group leaderboard")
 	}
 
 	return r.generateLeaderboardEntryList(ctx, result), nil
@@ -234,7 +236,7 @@ func (r *LeaderboardRepository) GetGroupLeaderboard(
 func (r *LeaderboardRepository) GetGroupRank(
 	ctx context.Context,
 	userId, tournamentId string,
-) (int64, error) {
+) (int64, *apperrors.AppError) {
 	r.logger.Debug("Getting group rank",
 		"tournament_id", tournamentId,
 		"user_id", userId,
@@ -242,9 +244,9 @@ func (r *LeaderboardRepository) GetGroupRank(
 
 	groupId, err := r.client.HGet(ctx, userGroupMappingsHashKey(), userTournamentField(userId, tournamentId)).Result()
 	if err == redis.Nil {
-		return 0, fmt.Errorf("user not in any group for this tournament")
+		return 0, leaderboarderrors.UserNotExistsInAnyGroup()
 	} else if err != nil {
-		return 0, fmt.Errorf("failed to get user group: %w", err)
+		return 0, apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to get user group")
 	}
 
 	key := groupLeaderboardKey(tournamentId, groupId)
@@ -259,7 +261,7 @@ func (r *LeaderboardRepository) GetGroupRank(
 			"group_id", groupId,
 			"user_id", userId,
 		)
-		return -1, fmt.Errorf("failed to get group rank: %w", err)
+		return -1, apperrors.Wrap(err, apperrors.CodeRedisOperationError, "failed to get group rank")
 	}
 
 	return rank, nil

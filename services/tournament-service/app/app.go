@@ -49,39 +49,39 @@ func New(ctx context.Context, cfg *config.Config) (*App, *apperrors.AppError) {
 	}
 
 	if err := app.initLogger(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init logger")
+		return nil, err
 	}
 
 	if err := app.initDatabase(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init database")
+		return nil, err
 	}
 
 	if err := app.initNATS(ctx); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init nats client")
+		return nil, err
 	}
 
-	if err := app.initMessagePublisher(ctx); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init messageing publisher")
+	if err := app.initMessagePublisher(); err != nil {
+		return nil, err
 	}
 
 	if err := app.initUserClient(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init user service client")
+		return nil, err
 	}
 
 	if err := app.initLeaderboardClient(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init leaderboard service client")
+		return nil, err
 	}
 
 	if err := app.initGRPC(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init grpc server")
+		return nil, err
 	}
 
 	if err := app.initMessageSubscriber(ctx); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init messaging subscriber")
+		return nil, err
 	}
 
 	if err := app.initScheduler(); err != nil {
-		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init scheduler")
+		return nil, err
 	}
 
 	return app, nil
@@ -198,7 +198,7 @@ func (a *App) initGRPC() *apperrors.AppError {
 	return nil
 }
 
-func (a *App) initMessagePublisher(ctx context.Context) *apperrors.AppError {
+func (a *App) initMessagePublisher() *apperrors.AppError {
 	a.eventPublisher = publisher.NewEventPublisher(a.natsClient, a.logger)
 	return nil
 }
@@ -251,7 +251,7 @@ func (a *App) Stop() *apperrors.AppError {
 }
 
 func (a *App) loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	start := time.Now()
+	start := time.Now().UTC()
 	resp, err := handler(ctx, req)
 	a.logger.Info(fmt.Sprintf("Method: %s, Duration: %v", info.FullMethod, time.Since(start)))
 	return resp, err

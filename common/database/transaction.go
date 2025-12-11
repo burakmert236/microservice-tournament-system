@@ -60,8 +60,11 @@ func (tb *TransactionBuilder) Execute(ctx context.Context, client *dynamodb.Clie
 		TransactItems: tb.items,
 	}
 
-	_, err := client.TransactWriteItems(ctx, input)
-	return apperrors.Wrap(err, apperrors.CodeTransactionError, "failed to execute transaction")
+	if _, err := client.TransactWriteItems(ctx, input); err != nil {
+		return apperrors.Wrap(err, apperrors.CodeTransactionError, "failed to execute transaction")
+	}
+
+	return nil
 }
 
 func (tb *TransactionBuilder) Count() int {

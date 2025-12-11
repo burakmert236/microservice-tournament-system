@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 
-	"github.com/burakmert236/goodswipe-common/errors"
 	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	proto "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
@@ -25,12 +24,12 @@ func NewTournamentHandler(TournamentService service.TournamentService, logger *l
 
 func (h *TournamentHandler) EnterTournament(ctx context.Context, req *proto.EnterTournamentRequest) (*proto.MessageResponse, error) {
 	if req.UserId == "" {
-		return nil, errors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id is required"))
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id is required"))
 	}
 
 	err := h.tournamentService.EnterTournament(ctx, req.UserId)
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	resp := &proto.MessageResponse{
@@ -48,7 +47,7 @@ func (h *TournamentHandler) ClaimReward(ctx context.Context, req *proto.ClaimRew
 
 	err := h.tournamentService.ClaimReward(ctx, req.UserId, req.TournamentId)
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	resp := &proto.MessageResponse{

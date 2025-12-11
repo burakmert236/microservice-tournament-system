@@ -2,10 +2,10 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/burakmert236/goodswipe-common/config"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -13,7 +13,7 @@ type RedisClient struct {
 	client *redis.Client
 }
 
-func NewRedisClient(cfg config.RedisConfig) (*RedisClient, error) {
+func NewRedisClient(cfg config.RedisConfig) (*RedisClient, *apperrors.AppError) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     cfg.Address,
 		Password: cfg.Password,
@@ -23,18 +23,26 @@ func NewRedisClient(cfg config.RedisConfig) (*RedisClient, error) {
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+		apperrors.Wrap(err, apperrors.CodeInternalServer, "redis client ping error")
 	}
 
 	return &RedisClient{client: client}, nil
 }
 
-func (r *RedisClient) Close() error {
-	return r.client.Close()
+func (r *RedisClient) Close() *apperrors.AppError {
+	if err := r.client.Close(); err != nil {
+		apperrors.Wrap(err, apperrors.CodeInternalServer, "redis client close error")
+	}
+
+	return nil
 }
 
-func (r *RedisClient) Ping(ctx context.Context) error {
-	return r.client.Ping(ctx).Err()
+func (r *RedisClient) Ping(ctx context.Context) *apperrors.AppError {
+	if err := r.client.Ping(ctx).Err(); err != nil {
+		apperrors.Wrap(err, apperrors.CodeInternalServer, "redis client ping error")
+	}
+
+	return nil
 }
 
 func (r *RedisClient) GetClient() *redis.Client {

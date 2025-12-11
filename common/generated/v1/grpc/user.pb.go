@@ -226,7 +226,7 @@ type ReserveCoinsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Amount        int64                  `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	ReservationId string                 `protobuf:"bytes,3,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	TournamentId  string                 `protobuf:"bytes,3,opt,name=tournament_id,json=tournamentId,proto3" json:"tournament_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -275,16 +275,17 @@ func (x *ReserveCoinsRequest) GetAmount() int64 {
 	return 0
 }
 
-func (x *ReserveCoinsRequest) GetReservationId() string {
+func (x *ReserveCoinsRequest) GetTournamentId() string {
 	if x != nil {
-		return x.ReservationId
+		return x.TournamentId
 	}
 	return ""
 }
 
 type ConfirmReservationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	TournamentId  string                 `protobuf:"bytes,2,opt,name=tournament_id,json=tournamentId,proto3" json:"tournament_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -319,16 +320,24 @@ func (*ConfirmReservationRequest) Descriptor() ([]byte, []int) {
 	return file_v1_grpc_user_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ConfirmReservationRequest) GetReservationId() string {
+func (x *ConfirmReservationRequest) GetUserId() string {
 	if x != nil {
-		return x.ReservationId
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ConfirmReservationRequest) GetTournamentId() string {
+	if x != nil {
+		return x.TournamentId
 	}
 	return ""
 }
 
 type RollbackReservationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	TournamentId  string                 `protobuf:"bytes,2,opt,name=tournament_id,json=tournamentId,proto3" json:"tournament_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -363,9 +372,16 @@ func (*RollbackReservationRequest) Descriptor() ([]byte, []int) {
 	return file_v1_grpc_user_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *RollbackReservationRequest) GetReservationId() string {
+func (x *RollbackReservationRequest) GetUserId() string {
 	if x != nil {
-		return x.ReservationId
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *RollbackReservationRequest) GetTournamentId() string {
+	if x != nil {
+		return x.TournamentId
 	}
 	return ""
 }
@@ -498,15 +514,17 @@ const file_v1_grpc_user_proto_rawDesc = "" +
 	"\x1eCollectTournamentRewardRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12#\n" +
 	"\rtournament_id\x18\x02 \x01(\tR\ftournamentId\x12\x12\n" +
-	"\x04coin\x18\x03 \x01(\x05R\x04coin\"m\n" +
+	"\x04coin\x18\x03 \x01(\x05R\x04coin\"k\n" +
 	"\x13ReserveCoinsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\x03R\x06amount\x12%\n" +
-	"\x0ereservation_id\x18\x03 \x01(\tR\rreservationId\"B\n" +
-	"\x19ConfirmReservationRequest\x12%\n" +
-	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"C\n" +
-	"\x1aRollbackReservationRequest\x12%\n" +
-	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\"-\n" +
+	"\x06amount\x18\x02 \x01(\x03R\x06amount\x12#\n" +
+	"\rtournament_id\x18\x03 \x01(\tR\ftournamentId\"Y\n" +
+	"\x19ConfirmReservationRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12#\n" +
+	"\rtournament_id\x18\x02 \x01(\tR\ftournamentId\"Z\n" +
+	"\x1aRollbackReservationRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12#\n" +
+	"\rtournament_id\x18\x02 \x01(\tR\ftournamentId\"-\n" +
 	"\x12CreateUserResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"{\n" +
 	"\x13GetUserByIdResponse\x12\x17\n" +

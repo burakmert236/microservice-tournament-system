@@ -32,7 +32,7 @@ func NewGroupRepository(db *database.DynamoDBClient) GroupRepository {
 func (r *groupRepo) CreateGroup(ctx context.Context, group *models.Group) *apperrors.AppError {
 	group.PK = models.TournamentPK(group.TournamentId)
 	group.SK = models.GroupSK(group.GroupId)
-	group.CreatedAt = time.Now()
+	group.CreatedAt = time.Now().UTC()
 
 	item, err := attributevalue.MarshalMap(group)
 	if err != nil {

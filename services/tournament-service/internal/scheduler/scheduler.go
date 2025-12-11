@@ -24,7 +24,7 @@ func (s *Scheduler) Start() {
 	ctx := context.Background()
 	s.tournamentScheduler.CreateCurrentTournamentIfNotExists(ctx)
 
-	now := time.Now().UTC()
+	now := time.Now()
 	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC)
 	durationUntilMidnight := nextMidnight.Sub(now)
 

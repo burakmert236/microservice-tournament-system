@@ -50,13 +50,16 @@ func (s *Subscriber) Subscribe(ctx context.Context, cfg ConsumerConfig, handler 
 		}
 	})
 	if err != nil {
-		apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to consume nats message")
+		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to consume nats message")
 	}
 
 	return nil
 }
 
 func UnmarshalProto(msg jetstream.Msg, pb proto.Message) *apperrors.AppError {
-	err := proto.Unmarshal(msg.Data(), pb)
-	return apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal proto message")
+	if err := proto.Unmarshal(msg.Data(), pb); err != nil {
+		return apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal proto message")
+	}
+
+	return nil
 }

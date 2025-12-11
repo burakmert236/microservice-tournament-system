@@ -14,22 +14,22 @@ const (
 )
 
 type Reservation struct {
-	ReservationId string            `dynamodbav:"reservation_id"`
-	UserId        string            `dynamodbav:"user_id"`
-	Amount        int64             `dynamodbav:"amount"`
-	Status        ReservationStatus `dynamodbav:"status"`
-	Purpose       string            `dynamodbav:"purpose"`
-	CreatedAt     time.Time         `dynamodbav:"created_at"`
-	UpdatedAt     time.Time         `dynamodbav:"updated_at"`
+	UserId       string            `dynamodbav:"user_id"`
+	TournamentId string            `dynamodbav:"tournament_id"`
+	Amount       int64             `dynamodbav:"amount"`
+	Status       ReservationStatus `dynamodbav:"status"`
+	Purpose      string            `dynamodbav:"purpose"`
+	CreatedAt    time.Time         `dynamodbav:"created_at"`
+	UpdatedAt    time.Time         `dynamodbav:"updated_at"`
 
 	PK string `dynamodbav:"PK"`
 	SK string `dynamodbav:"SK"`
 }
 
-func ReservationPK(reservationId string) string {
-	return fmt.Sprintf("RESERVATION#%s", reservationId)
+func ReservationPK(userId string) string {
+	return fmt.Sprintf("RESERVATION#%s", userId)
 }
 
-func ReservationSK() string {
-	return "META"
+func ReservationSK(tournamentId string) string {
+	return fmt.Sprintf("TOURNAMENT#%s", tournamentId)
 }

@@ -17,4 +17,5 @@ const (
 	CodeDatabaseError          = "DATABASE_ERROR"
 	CodeTransactionError       = "TRANSACTION_ERROR"
 	CodeGrpcCallError          = "GRPC_CALL_ERROR"
+	CodeRedisOperationError    = "REDIS_ERROR"
 )

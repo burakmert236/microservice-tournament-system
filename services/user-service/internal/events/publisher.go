@@ -28,7 +28,7 @@ func (p *EventPublisher) PublishUserCreated(ctx context.Context, userId, display
 	event := &protoevents.UserCreated{
 		UserId:      userId,
 		DisplayName: displayName,
-		TimeStamp:   time.Now().Unix(),
+		TimeStamp:   time.Now().UTC().Unix(),
 	}
 
 	if err := p.publisher.PublishProto(ctx, commonevents.UserCreated, event); err != nil {
@@ -45,7 +45,7 @@ func (p *EventPublisher) PublishUserLevelUp(ctx context.Context, userId string, 
 		UserId:        userId,
 		LevelIncrease: int32(levelIncrease),
 		NewLevel:      int32(newLevel),
-		TimeStamp:     time.Now().Unix(),
+		TimeStamp:     time.Now().UTC().Unix(),
 	}
 
 	if err := p.publisher.PublishProto(ctx, commonevents.UserLevelUp, event); err != nil {

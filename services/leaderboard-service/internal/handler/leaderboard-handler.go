@@ -2,14 +2,11 @@ package handler
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/burakmert236/goodswipe-common/errors"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	proto "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-leaderboard-service/internal/service"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type LeaderboardHandler struct {
@@ -31,10 +28,7 @@ func (h *LeaderboardHandler) GetGlobalLeaderboard(
 ) (*proto.GetGlobalLeaderboardResponse, error) {
 	leaderboard, err := h.leaderboardService.GetGlobalLeaderboard(ctx)
 	if err != nil {
-		if appErr, ok := err.(*errors.AppError); ok {
-			return nil, appErr.ToGRPCStatus()
-		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	responseUsers := make([]*proto.UserInfo, len(leaderboard))
@@ -54,15 +48,12 @@ func (h *LeaderboardHandler) GetTournamentLeaderboard(
 	req *proto.GetTournamentLeaderboardRequest,
 ) (*proto.GetTournamentLeaderboardResponse, error) {
 	if req.UserId == "" || req.TournamentId == "" {
-		return nil, status.Error(codes.InvalidArgument, "User id and tournament id is required")
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id and tournament id is required"))
 	}
 
 	leaderboard, err := h.leaderboardService.GetTournamentLeaderboard(ctx, req.UserId, req.TournamentId)
 	if err != nil {
-		if appErr, ok := err.(*errors.AppError); ok {
-			return nil, appErr.ToGRPCStatus()
-		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	responseUsers := make([]*proto.UserInfo, len(leaderboard))
@@ -82,15 +73,12 @@ func (h *LeaderboardHandler) GetTournamentRank(
 	req *proto.GetTournamentRankRequest,
 ) (*proto.GetTournamentRankResponse, error) {
 	if req.UserId == "" || req.TournamentId == "" {
-		return nil, status.Error(codes.InvalidArgument, "User id and tournament id is required")
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id and tournament id is required"))
 	}
 
 	rank, err := h.leaderboardService.GetTournamentRank(ctx, req.UserId, req.TournamentId)
 	if err != nil {
-		if appErr, ok := err.(*errors.AppError); ok {
-			return nil, appErr.ToGRPCStatus()
-		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	return &proto.GetTournamentRankResponse{Rank: int32(rank)}, nil

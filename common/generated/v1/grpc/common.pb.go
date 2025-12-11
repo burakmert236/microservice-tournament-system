@@ -24,7 +24,7 @@ const (
 // Common Types
 type MessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	IsSuccess     bool                   `protobuf:"varint,1,opt,name=isSuccess,proto3" json:"isSuccess,omitempty"`
+	IsSuccess     bool                   `protobuf:"varint,1,opt,name=is_success,json=isSuccess,proto3" json:"is_success,omitempty"`
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -78,9 +78,10 @@ var File_v1_grpc_common_proto protoreflect.FileDescriptor
 
 const file_v1_grpc_common_proto_rawDesc = "" +
 	"\n" +
-	"\x14v1/grpc/common.proto\x12\x04grpc\"I\n" +
-	"\x0fMessageResponse\x12\x1c\n" +
-	"\tisSuccess\x18\x01 \x01(\bR\tisSuccess\x12\x18\n" +
+	"\x14v1/grpc/common.proto\x12\x04grpc\"J\n" +
+	"\x0fMessageResponse\x12\x1d\n" +
+	"\n" +
+	"is_success\x18\x01 \x01(\bR\tisSuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessageB9Z7github.com/burakmert236/goodswipe-common/generated/grpcb\x06proto3"
 
 var (

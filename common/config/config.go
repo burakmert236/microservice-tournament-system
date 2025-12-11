@@ -1,6 +1,7 @@
 package config
 
 import (
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/spf13/viper"
 )
 
@@ -47,7 +48,7 @@ type RedisConfig struct {
 	Password string
 }
 
-func Load(configPath string) (*Config, error) {
+func Load(configPath string) (*Config, *apperrors.AppError) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./config")
@@ -58,12 +59,12 @@ func Load(configPath string) (*Config, error) {
 	viper.SetEnvPrefix("GOODSWIPE")
 
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to read config")
 	}
 
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
-		return nil, err
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshall config")
 	}
 
 	return &cfg, nil

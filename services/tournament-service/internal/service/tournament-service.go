@@ -99,8 +99,6 @@ func (s *tournamentService) EnterTournament(
 	ctx context.Context,
 	userId string,
 ) *apperrors.AppError {
-	reservationId := uuid.New().String()
-
 	// Get active tournament
 	tournament, err := s.tournamentRepo.GetActiveTournament(ctx)
 	if err != nil {
@@ -126,7 +124,7 @@ func (s *tournamentService) EnterTournament(
 	}
 
 	// Handle validation and reservation
-	if err := s.handleBeforeTournamentEntryOperations(ctx, userId, reservationId, int(userResponse.Level), tournament); err != nil {
+	if err := s.handleBeforeTournamentEntryOperations(ctx, userId, tournament.TournamentId, int(userResponse.Level), tournament); err != nil {
 		return err
 	}
 
@@ -158,7 +156,7 @@ func (s *tournamentService) EnterTournament(
 
 	transactionErr := s.transactionRepo.Execute(ctx, transactionBuilder)
 
-	if err = s.handleAfterTournamentEntryOperations(ctx, transactionErr, reservationId); err != nil {
+	if err = s.handleAfterTournamentEntryOperations(ctx, transactionErr, userId, tournament.TournamentId); err != nil {
 		return err
 	}
 
@@ -281,7 +279,7 @@ func (s *tournamentService) getLevelUpdateScoreReward(
 }
 
 func (s *tournamentService) validateDate(tournament *models.Tournament) *apperrors.AppError {
-	if tournament.LastAllowedParticipationDate.Compare(time.Now()) > 0 {
+	if tournament.LastAllowedParticipationDate.Compare(time.Now().UTC()) < 0 {
 		return tournamenterrors.TournamentDateError(tournament.LastAllowedParticipationDate)
 	}
 
@@ -321,7 +319,7 @@ func (s *tournamentService) findOrCreateAvailableGroup(
 
 func (s *tournamentService) handleBeforeTournamentEntryOperations(
 	ctx context.Context,
-	userId, reservationId string,
+	userId, tournamentId string,
 	level int,
 	tournament *models.Tournament,
 ) *apperrors.AppError {
@@ -334,9 +332,9 @@ func (s *tournamentService) handleBeforeTournamentEntryOperations(
 	}
 
 	_, err := s.userClient.ReserveCoins(ctx, &protogrpc.ReserveCoinsRequest{
-		UserId:        userId,
-		Amount:        int64(tournament.EnteranceFee),
-		ReservationId: reservationId,
+		UserId:       userId,
+		Amount:       int64(tournament.EnteranceFee),
+		TournamentId: tournamentId,
 	})
 
 	if err != nil {
@@ -349,36 +347,38 @@ func (s *tournamentService) handleBeforeTournamentEntryOperations(
 func (s *tournamentService) handleAfterTournamentEntryOperations(
 	ctx context.Context,
 	trsansactionErr *apperrors.AppError,
-	reservationId string,
+	userId, tournamentId string,
 ) *apperrors.AppError {
 	if trsansactionErr != nil {
-		s.logger.Warn("Failed to add participant, rolling back reservation %s", reservationId)
+		s.logger.Warn("Failed to add participant, rolling back reservation for user: %s in tournament: %s", userId, tournamentId)
 
 		_, rollbackErr := s.userClient.RollbackReservation(ctx, &protogrpc.RollbackReservationRequest{
-			ReservationId: reservationId,
+			UserId:       userId,
+			TournamentId: tournamentId,
 		})
 
 		if rollbackErr != nil {
-			s.logger.Warn("CRITICAL: Failed to rollback reservation %s: %v", reservationId, rollbackErr)
+			s.logger.Warn("CRITICAL: Failed to rollback for user %s: %v", userId, rollbackErr)
 		}
 
 		return trsansactionErr
 	}
 
-	s.logger.Info("Confirming reservation %s", reservationId)
+	s.logger.Info("Confirming reservation, user: %s tournament: %s", userId, tournamentId)
 	_, err := s.userClient.ConfirmReservation(ctx, &protogrpc.ConfirmReservationRequest{
-		ReservationId: reservationId,
+		UserId:       userId,
+		TournamentId: tournamentId,
 	})
 
 	if err != nil {
-		s.logger.Warn("Failed to confirm reservation %s: %v", reservationId, err)
+		s.logger.Warn("Failed to confirm reservation, user: %s tournament: %s", userId, tournamentId)
+		return apperrors.Wrap(err, apperrors.CodeGrpcCallError, "failed to call grpc user service confirmReservation")
 	}
 
-	return apperrors.Wrap(err, apperrors.CodeGrpcCallError, "failed to call grpc user service confirmReservation")
+	return nil
 }
 
 func (s *tournamentService) calculateReward(
-	ctx context.Context,
 	ranking int,
 	rewardingMap map[string]int,
 ) (int, *apperrors.AppError) {
@@ -431,7 +431,7 @@ func (s *tournamentService) handleRewardClaim(
 		return 0, apperrors.Wrap(rankingErr, apperrors.CodeGrpcCallError, "failed to call grpc leaderboard service getTournamentRank")
 	}
 
-	reward, err := s.calculateReward(ctx, int(rankingResponse.Rank), participation.RewardingMap)
+	reward, err := s.calculateReward(int(rankingResponse.Rank), participation.RewardingMap)
 	if err != nil {
 		return 0, err
 	}

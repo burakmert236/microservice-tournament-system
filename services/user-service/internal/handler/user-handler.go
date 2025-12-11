@@ -3,9 +3,6 @@ package handler
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	proto "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
@@ -27,7 +24,7 @@ func NewUserHandler(UserService service.UserService, logger *logger.Logger) *Use
 
 func (h *UserHandler) CreateUser(ctx context.Context, req *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
 	if req.DisplayName == "" {
-		return nil, apperrors.New(apperrors.CodeInvalidInput, "display name is required")
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "display name is required"))
 	}
 
 	user, err := h.userService.CreateUser(ctx, req.DisplayName)
@@ -44,15 +41,15 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *proto.CreateUserReque
 
 func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgressRequest) (*proto.MessageResponse, error) {
 	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "User id is required")
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id is required"))
 	}
 	if req.ProgressAmount <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "Progress amount must be a positive number")
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "Progress amount must be a positive number"))
 	}
 
 	err := h.userService.UpdateProgress(ctx, req.UserId, int(req.ProgressAmount))
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	message := &proto.MessageResponse{
@@ -65,12 +62,12 @@ func (h *UserHandler) UpdateProgress(ctx context.Context, req *proto.UpdateProgr
 
 func (h *UserHandler) GetById(ctx context.Context, req *proto.GetUserByIdRequest) (*proto.GetUserByIdResponse, error) {
 	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "User id is required")
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id is required"))
 	}
 
 	user, err := h.userService.GetById(ctx, req.UserId)
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	message := &proto.GetUserByIdResponse{
@@ -94,7 +91,7 @@ func (h *UserHandler) CollectTournamentReward(ctx context.Context, req *proto.Co
 
 	err := h.userService.CollectTournamentReward(ctx, req.UserId, req.TournamentId, int(req.Coin))
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	message := &proto.MessageResponse{
@@ -106,9 +103,9 @@ func (h *UserHandler) CollectTournamentReward(ctx context.Context, req *proto.Co
 }
 
 func (h *UserHandler) ReserveCoins(ctx context.Context, req *proto.ReserveCoinsRequest) (*proto.MessageResponse, error) {
-	err := h.userService.ReserveCoins(ctx, req.UserId, int(req.Amount), req.ReservationId)
+	err := h.userService.ReserveCoins(ctx, req.UserId, int(req.Amount), req.TournamentId)
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	return &proto.MessageResponse{
@@ -118,9 +115,9 @@ func (h *UserHandler) ReserveCoins(ctx context.Context, req *proto.ReserveCoinsR
 }
 
 func (h *UserHandler) ConfirmReservation(ctx context.Context, req *proto.ConfirmReservationRequest) (*proto.MessageResponse, error) {
-	err := h.userService.ConfirmReservation(ctx, req.ReservationId)
+	err := h.userService.ConfirmReservation(ctx, req.UserId, req.TournamentId)
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	return &proto.MessageResponse{
@@ -130,9 +127,9 @@ func (h *UserHandler) ConfirmReservation(ctx context.Context, req *proto.Confirm
 }
 
 func (h *UserHandler) RollbackReservation(ctx context.Context, req *proto.RollbackReservationRequest) (*proto.MessageResponse, error) {
-	err := h.userService.RollbackReservation(ctx, req.ReservationId)
+	err := h.userService.RollbackReservation(ctx, req.UserId, req.TournamentId)
 	if err != nil {
-		apperrors.ToGRPCError(err)
+		return nil, apperrors.ToGRPCError(err)
 	}
 
 	return &proto.MessageResponse{

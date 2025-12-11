@@ -2,8 +2,8 @@ package natsjetstream
 
 import (
 	"context"
-	"fmt"
 
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -15,19 +15,19 @@ func NewPublisher(client *Client) *Publisher {
 	return &Publisher{client: client}
 }
 
-func (p *Publisher) PublishProto(ctx context.Context, subject string, msg proto.Message) error {
+func (p *Publisher) PublishProto(ctx context.Context, subject string, msg proto.Message) *apperrors.AppError {
 	data, err := proto.Marshal(msg)
 	if err != nil {
-		return fmt.Errorf("failed to marshal proto message: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshal proto message")
 	}
 
 	return p.Publish(ctx, subject, data)
 }
 
-func (p *Publisher) Publish(ctx context.Context, subject string, data []byte) error {
+func (p *Publisher) Publish(ctx context.Context, subject string, data []byte) *apperrors.AppError {
 	_, err := p.client.js.Publish(ctx, subject, data)
 	if err != nil {
-		return fmt.Errorf("failed to publish message: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to publish message")
 	}
 	return nil
 }

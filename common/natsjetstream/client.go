@@ -53,6 +53,7 @@ func (c *Client) Close() error {
 	if c.conn != nil {
 		c.conn.Close()
 	}
+
 	return nil
 }
 
