@@ -2,10 +2,10 @@ package subscriber
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nats-io/nats.go/jetstream"
 
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	commonevents "github.com/burakmert236/goodswipe-common/events"
 	protoevents "github.com/burakmert236/goodswipe-common/generated/v1/events"
 	"github.com/burakmert236/goodswipe-common/logger"
@@ -33,18 +33,18 @@ func NewEventSubscriber(
 	}
 }
 
-func (s *EventSubscriber) Start(ctx context.Context) error {
+func (s *EventSubscriber) Start(ctx context.Context) *apperrors.AppError {
 	s.logger.Info("Starting event subscriptions")
 
 	if err := s.subscribeToUserEvents(ctx); err != nil {
-		return fmt.Errorf("failed to subscribe to user events: %w", err)
+		return err
 	}
 
 	s.logger.Info("All event subscriptions started")
 	return nil
 }
 
-func (s *EventSubscriber) subscribeToUserEvents(ctx context.Context) error {
+func (s *EventSubscriber) subscribeToUserEvents(ctx context.Context) *apperrors.AppError {
 	cfg := natsjetstream.ConsumerConfig{
 		StreamName:   commonevents.UserEventsStream,
 		ConsumerName: "tournament-service-user-consumer",
@@ -60,7 +60,7 @@ func (s *EventSubscriber) subscribeToUserEvents(ctx context.Context) error {
 	return s.subscriber.Subscribe(ctx, cfg, s.handleUserEvents)
 }
 
-func (s *EventSubscriber) handleUserEvents(ctx context.Context, msg jetstream.Msg) error {
+func (s *EventSubscriber) handleUserEvents(ctx context.Context, msg jetstream.Msg) *apperrors.AppError {
 	subject := msg.Subject()
 
 	s.logger.Debug("Received user event", "subject", subject)
@@ -74,13 +74,13 @@ func (s *EventSubscriber) handleUserEvents(ctx context.Context, msg jetstream.Ms
 	}
 }
 
-func (s *EventSubscriber) handleUserLevelUp(ctx context.Context, msg jetstream.Msg) error {
+func (s *EventSubscriber) handleUserLevelUp(ctx context.Context, msg jetstream.Msg) *apperrors.AppError {
 	var event protoevents.UserLevelUp
 	if err := natsjetstream.UnmarshalProto(msg, &event); err != nil {
 		s.logger.Error("Failed to unmarshal user level up event",
 			"error", err,
 		)
-		return fmt.Errorf("unmarshal error: %w", err)
+		return err
 	}
 
 	s.logger.Info("Processing user level up event",
@@ -94,7 +94,7 @@ func (s *EventSubscriber) handleUserLevelUp(ctx context.Context, msg jetstream.M
 			"error", err,
 			"user_id", event.UserId,
 		)
-		return fmt.Errorf("update progress error: %w", err)
+		return err
 	}
 
 	s.logger.Info("User level up event processed successfully")

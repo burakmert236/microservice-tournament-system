@@ -20,13 +20,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	application, err := app.New(ctx, cfg)
-	if err != nil {
-		log.Fatalf("Failed to initialize application: %v", err)
+	application, appErr := app.New(ctx, cfg)
+	if appErr != nil {
+		log.Fatalf("Failed to initialize application: %v", appErr)
 	}
 
-	if err := application.Start(); err != nil {
-		log.Fatalf("Failed to start application: %v", err)
+	if appErr := application.Start(); appErr != nil {
+		log.Fatalf("Failed to start application: %v", appErr)
 	}
 
 	quit := make(chan os.Signal, 1)
@@ -35,7 +35,7 @@ func main() {
 
 	log.Println("Shutting down gracefully...")
 
-	if err := application.Stop(); err != nil {
-		log.Printf("Error during shutdown: %v", err)
+	if appErr := application.Stop(); appErr != nil {
+		log.Printf("Error during shutdown: %v", appErr)
 	}
 }

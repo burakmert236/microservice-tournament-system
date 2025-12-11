@@ -16,4 +16,5 @@ const (
 	CodeObjectUnmarshalError   = "OBJECT_UNMARSHALL_ERROR"
 	CodeDatabaseError          = "DATABASE_ERROR"
 	CodeTransactionError       = "TRANSACTION_ERROR"
+	CodeGrpcCallError          = "GRPC_CALL_ERROR"
 )

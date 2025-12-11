@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,13 +9,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/burakmert236/goodswipe-common/database"
-	"github.com/burakmert236/goodswipe-common/errors"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-common/models"
 )
 
 type GroupRepository interface {
-	CreateGroup(ctx context.Context, group *models.Group) error
-	FindAvailableGroup(ctx context.Context, tournamentId string) (*models.Group, error)
+	CreateGroup(ctx context.Context, group *models.Group) *apperrors.AppError
+	FindAvailableGroup(ctx context.Context, tournamentId string) (*models.Group, *apperrors.AppError)
 
 	// Transaction operations
 	GetTransactionForAddingParticipant(ctx context.Context, groupId string, tournamentId string) types.Update
@@ -30,14 +29,14 @@ func NewGroupRepository(db *database.DynamoDBClient) GroupRepository {
 	return &groupRepo{db: db}
 }
 
-func (r *groupRepo) CreateGroup(ctx context.Context, group *models.Group) error {
+func (r *groupRepo) CreateGroup(ctx context.Context, group *models.Group) *apperrors.AppError {
 	group.PK = models.TournamentPK(group.TournamentId)
 	group.SK = models.GroupSK(group.GroupId)
 	group.CreatedAt = time.Now()
 
 	item, err := attributevalue.MarshalMap(group)
 	if err != nil {
-		return fmt.Errorf("failed to marshal group: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshal group")
 	}
 
 	_, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
@@ -47,13 +46,13 @@ func (r *groupRepo) CreateGroup(ctx context.Context, group *models.Group) error 
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create group: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to create group")
 	}
 
 	return nil
 }
 
-func (r *groupRepo) FindAvailableGroup(ctx context.Context, tournamentId string) (*models.Group, error) {
+func (r *groupRepo) FindAvailableGroup(ctx context.Context, tournamentId string) (*models.Group, *apperrors.AppError) {
 	result, err := r.db.Client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(r.db.Table()),
 		KeyConditionExpression: aws.String("PK = :pk AND begins_with(SK, :sk)"),
@@ -66,20 +65,16 @@ func (r *groupRepo) FindAvailableGroup(ctx context.Context, tournamentId string)
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get group: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to get group")
 	}
 
 	if len(result.Items) <= 0 {
-		return nil, errors.NewAppError(
-			errors.ErrCodeNotFound,
-			"group not found",
-			nil,
-		)
+		return nil, apperrors.New(apperrors.CodeNotFound, "group not found")
 	}
 
 	var group models.Group
 	if err := attributevalue.UnmarshalMap(result.Items[0], &group); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal user: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal user")
 	}
 
 	return &group, nil

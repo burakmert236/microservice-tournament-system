@@ -2,9 +2,9 @@ package natsjetstream
 
 import (
 	"context"
-	"fmt"
 	"log"
 
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/nats-io/nats.go/jetstream"
 	"google.golang.org/protobuf/proto"
 )
@@ -13,13 +13,13 @@ type Subscriber struct {
 	client *Client
 }
 
-type MessageHandler func(ctx context.Context, msg jetstream.Msg) error
+type MessageHandler func(ctx context.Context, msg jetstream.Msg) *apperrors.AppError
 
 func NewSubscriber(client *Client) *Subscriber {
 	return &Subscriber{client: client}
 }
 
-func (s *Subscriber) Subscribe(ctx context.Context, cfg ConsumerConfig, handler MessageHandler) error {
+func (s *Subscriber) Subscribe(ctx context.Context, cfg ConsumerConfig, handler MessageHandler) *apperrors.AppError {
 	consumerConfig := jetstream.ConsumerConfig{
 		Name:    cfg.ConsumerName,
 		Durable: cfg.Durable,
@@ -38,7 +38,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, cfg ConsumerConfig, handler 
 
 	consumer, err := s.client.js.CreateOrUpdateConsumer(ctx, cfg.StreamName, consumerConfig)
 	if err != nil {
-		return fmt.Errorf("failed to create consumer: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create nats consumer")
 	}
 
 	_, err = consumer.Consume(func(msg jetstream.Msg) {
@@ -49,10 +49,14 @@ func (s *Subscriber) Subscribe(ctx context.Context, cfg ConsumerConfig, handler 
 			msg.Ack()
 		}
 	})
+	if err != nil {
+		apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to consume nats message")
+	}
 
-	return err
+	return nil
 }
 
-func UnmarshalProto(msg jetstream.Msg, pb proto.Message) error {
-	return proto.Unmarshal(msg.Data(), pb)
+func UnmarshalProto(msg jetstream.Msg, pb proto.Message) *apperrors.AppError {
+	err := proto.Unmarshal(msg.Data(), pb)
+	return apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal proto message")
 }

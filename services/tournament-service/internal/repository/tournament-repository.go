@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -11,15 +10,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"github.com/burakmert236/goodswipe-common/database"
-	"github.com/burakmert236/goodswipe-common/errors"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-common/models"
 )
 
 type TournamentRepository interface {
-	Create(ctx context.Context, Tournament *models.Tournament) error
-	GetActiveTournament(ctx context.Context) (*models.Tournament, error)
-	GetById(ctx context.Context, tournamentId string) (*models.Tournament, error)
-	Update(ctx context.Context, Tournament *models.Tournament) error
+	Create(ctx context.Context, Tournament *models.Tournament) *apperrors.AppError
+	GetActiveTournament(ctx context.Context) (*models.Tournament, *apperrors.AppError)
+	GetById(ctx context.Context, tournamentId string) (*models.Tournament, *apperrors.AppError)
+	Update(ctx context.Context, Tournament *models.Tournament) *apperrors.AppError
 }
 
 type tournamentRepo struct {
@@ -30,7 +29,7 @@ func NewTournamentRepository(db *database.DynamoDBClient) TournamentRepository {
 	return &tournamentRepo{db: db}
 }
 
-func (r *tournamentRepo) Create(ctx context.Context, tournament *models.Tournament) error {
+func (r *tournamentRepo) Create(ctx context.Context, tournament *models.Tournament) *apperrors.AppError {
 	tournament.PK = models.TournamentPK(tournament.TournamentId)
 	tournament.SK = models.MetaSK()
 	tournament.GSI1PK = models.TournamentGSI1PK()
@@ -39,7 +38,7 @@ func (r *tournamentRepo) Create(ctx context.Context, tournament *models.Tourname
 
 	item, err := attributevalue.MarshalMap(tournament)
 	if err != nil {
-		return fmt.Errorf("failed to marshal Tournament: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshal tournament")
 	}
 
 	_, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
@@ -49,13 +48,13 @@ func (r *tournamentRepo) Create(ctx context.Context, tournament *models.Tourname
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create Tournament: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to create tournament")
 	}
 
 	return nil
 }
 
-func (r *tournamentRepo) GetActiveTournament(ctx context.Context) (*models.Tournament, error) {
+func (r *tournamentRepo) GetActiveTournament(ctx context.Context) (*models.Tournament, *apperrors.AppError) {
 	result, err := r.db.Client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(r.db.Table()),
 		IndexName:              aws.String("GSI1"),
@@ -69,26 +68,22 @@ func (r *tournamentRepo) GetActiveTournament(ctx context.Context) (*models.Tourn
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Tournament: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to get tournament")
 	}
 
 	if len(result.Items) <= 0 {
-		return nil, errors.NewAppError(
-			errors.ErrCodeNotFound,
-			"Tournament not found",
-			nil,
-		)
+		return nil, apperrors.New(apperrors.CodeNotFound, "tournament not found")
 	}
 
 	var Tournament models.Tournament
 	if err := attributevalue.UnmarshalMap(result.Items[0], &Tournament); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal Tournament: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal tournament")
 	}
 
 	return &Tournament, nil
 }
 
-func (r *tournamentRepo) GetById(ctx context.Context, tournamentId string) (*models.Tournament, error) {
+func (r *tournamentRepo) GetById(ctx context.Context, tournamentId string) (*models.Tournament, *apperrors.AppError) {
 	result, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -98,31 +93,27 @@ func (r *tournamentRepo) GetById(ctx context.Context, tournamentId string) (*mod
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get tournament: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to get tournament")
 	}
 
 	if result.Item == nil {
-		return nil, errors.NewAppError(
-			errors.ErrCodeNotFound,
-			"tournament not found",
-			nil,
-		)
+		return nil, apperrors.New(apperrors.CodeNotFound, "tournament not found")
 	}
 
 	var tournament models.Tournament
 	if err := attributevalue.UnmarshalMap(result.Item, &tournament); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal tournament: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal tournament")
 	}
 
 	return &tournament, nil
 }
 
-func (r *tournamentRepo) Update(ctx context.Context, Tournament *models.Tournament) error {
+func (r *tournamentRepo) Update(ctx context.Context, Tournament *models.Tournament) *apperrors.AppError {
 	Tournament.UpdatedAt = time.Now()
 
 	item, err := attributevalue.MarshalMap(Tournament)
 	if err != nil {
-		return fmt.Errorf("failed to marshal Tournament: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshal tournament")
 	}
 
 	_, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
@@ -132,7 +123,7 @@ func (r *tournamentRepo) Update(ctx context.Context, Tournament *models.Tourname
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to update Tournament: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update tournament")
 	}
 
 	return nil

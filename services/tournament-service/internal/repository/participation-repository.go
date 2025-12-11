@@ -11,18 +11,19 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/burakmert236/goodswipe-common/database"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/burakmert236/goodswipe-common/models"
 )
 
 type ParticipationRepository interface {
-	GetByUserAndTournament(ctx context.Context, userId, tournamentId string) (*models.Participation, error)
-	UpdateRewardProcessing(ctx context.Context, userId, tournamentId string) (*models.Participation, error)
-	UpdateRewardUnclaimed(ctx context.Context, userId, tournamentId string) (*models.Participation, error)
-	UpdateRewardClaimed(ctx context.Context, userId, tournamentId string) (*models.Participation, error)
-	UpdateParticipationScore(ctx context.Context, userId string, tournamentId string, gainedScore int) (*models.Participation, error)
+	GetByUserAndTournament(ctx context.Context, userId, tournamentId string) (*models.Participation, *apperrors.AppError)
+	UpdateRewardProcessing(ctx context.Context, userId, tournamentId string) (*models.Participation, *apperrors.AppError)
+	UpdateRewardUnclaimed(ctx context.Context, userId, tournamentId string) (*models.Participation, *apperrors.AppError)
+	UpdateRewardClaimed(ctx context.Context, userId, tournamentId string) (*models.Participation, *apperrors.AppError)
+	UpdateParticipationScore(ctx context.Context, userId, tournamentId string, gainedScore int) (*models.Participation, *apperrors.AppError)
 
 	// Transactions
-	GetTransactionForAddingParticipation(ctx context.Context, participation *models.Participation) (types.Put, error)
+	GetTransactionForAddingParticipation(ctx context.Context, participation *models.Participation) (types.Put, *apperrors.AppError)
 }
 
 type participationRepo struct {
@@ -36,7 +37,7 @@ func NewParticipationRRepository(db *database.DynamoDBClient) ParticipationRepos
 func (s *participationRepo) GetByUserAndTournament(
 	ctx context.Context,
 	userId, tournamentId string,
-) (*models.Participation, error) {
+) (*models.Participation, *apperrors.AppError) {
 	result, err := s.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(s.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -46,7 +47,7 @@ func (s *participationRepo) GetByUserAndTournament(
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get participation by user and tournament: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to get participation by user and tournament")
 	}
 
 	if result.Item == nil {
@@ -55,7 +56,7 @@ func (s *participationRepo) GetByUserAndTournament(
 
 	var participation models.Participation
 	if err := attributevalue.UnmarshalMap(result.Item, &participation); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal participation: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal participation")
 	}
 
 	return &participation, nil
@@ -64,7 +65,8 @@ func (s *participationRepo) GetByUserAndTournament(
 func (s *participationRepo) UpdateRewardProcessing(
 	ctx context.Context,
 	userId, tournamentId string,
-) (*models.Participation, error) {
+) (*models.Participation, *apperrors.AppError) {
+
 	result, err := s.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(s.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -85,12 +87,12 @@ func (s *participationRepo) UpdateRewardProcessing(
 		if errors.As(err, &ccf) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to update participation claim as processing: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update participation claim as processing")
 	}
 
 	var participation models.Participation
 	if err := attributevalue.UnmarshalMap(result.Attributes, &participation); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal participation: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal participation")
 	}
 
 	return &participation, nil
@@ -99,7 +101,8 @@ func (s *participationRepo) UpdateRewardProcessing(
 func (s *participationRepo) UpdateRewardUnclaimed(
 	ctx context.Context,
 	userId, tournamentId string,
-) (*models.Participation, error) {
+) (*models.Participation, *apperrors.AppError) {
+
 	result, err := s.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(s.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -120,12 +123,12 @@ func (s *participationRepo) UpdateRewardUnclaimed(
 		if errors.As(err, &ccf) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to update participation claim as processing: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update participation claim as processing")
 	}
 
 	var participation models.Participation
 	if err := attributevalue.UnmarshalMap(result.Attributes, &participation); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal participation: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal participation")
 	}
 
 	return &participation, nil
@@ -134,7 +137,8 @@ func (s *participationRepo) UpdateRewardUnclaimed(
 func (s *participationRepo) UpdateRewardClaimed(
 	ctx context.Context,
 	userId, tournamentId string,
-) (*models.Participation, error) {
+) (*models.Participation, *apperrors.AppError) {
+
 	result, err := s.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(s.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -155,12 +159,12 @@ func (s *participationRepo) UpdateRewardClaimed(
 		if errors.As(err, &ccf) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to update participation claim as processing: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update participation claim as processing")
 	}
 
 	var participation models.Participation
 	if err := attributevalue.UnmarshalMap(result.Attributes, &participation); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal participation: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal participation")
 	}
 
 	return &participation, nil
@@ -171,7 +175,8 @@ func (s *participationRepo) UpdateParticipationScore(
 	userId string,
 	tournamentId string,
 	gainedScore int,
-) (*models.Participation, error) {
+) (*models.Participation, *apperrors.AppError) {
+
 	result, err := s.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(s.db.Table()),
 		Key: map[string]types.AttributeValue{
@@ -192,12 +197,12 @@ func (s *participationRepo) UpdateParticipationScore(
 		if errors.As(err, &ccf) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to update participation score: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update participation score")
 	}
 
 	var participation models.Participation
 	if err := attributevalue.UnmarshalMap(result.Attributes, &participation); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal participation: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeObjectUnmarshalError, "failed to unmarshal participation")
 	}
 
 	return &participation, nil
@@ -208,14 +213,14 @@ func (s *participationRepo) UpdateParticipationScore(
 func (s *participationRepo) GetTransactionForAddingParticipation(
 	ctx context.Context,
 	participation *models.Participation,
-) (types.Put, error) {
+) (types.Put, *apperrors.AppError) {
 	participation.PK = models.UserPK(participation.UserId)
 	participation.SK = models.TournamentPK(participation.TournamentId)
 	participation.CreatedAt = time.Now()
 
 	item, err := attributevalue.MarshalMap(participation)
 	if err != nil {
-		return types.Put{}, fmt.Errorf("failed to marshal user: %w", err)
+		return types.Put{}, apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshal participation")
 	}
 
 	return types.Put{

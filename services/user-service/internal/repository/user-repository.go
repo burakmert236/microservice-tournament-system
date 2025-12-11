@@ -18,7 +18,6 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) *apperrors.AppError
 	GetById(ctx context.Context, userId string) (*models.User, *apperrors.AppError)
-	Update(ctx context.Context, user *models.User) *apperrors.AppError
 	UpdateLevelProgress(ctx context.Context, userId string, levelIncrease int, coinReward int) (int, *apperrors.AppError)
 	AddCoin(ctx context.Context, userId string, coin int) *apperrors.AppError
 
@@ -81,27 +80,6 @@ func (r *userRepo) GetById(ctx context.Context, userId string) (*models.User, *a
 	}
 
 	return &user, nil
-}
-
-func (r *userRepo) Update(ctx context.Context, user *models.User) *apperrors.AppError {
-	user.UpdatedAt = time.Now()
-
-	item, err := attributevalue.MarshalMap(user)
-	if err != nil {
-		return apperrors.Wrap(err, apperrors.CodeObjectMarshalError, "failed to marshall user")
-	}
-
-	_, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName:           aws.String(r.db.Table()),
-		Item:                item,
-		ConditionExpression: aws.String("attribute_exists(PK)"),
-	})
-
-	if err != nil {
-		return apperrors.Wrap(err, apperrors.CodeDatabaseError, "failed to update user")
-	}
-
-	return nil
 }
 
 func (r *userRepo) UpdateLevelProgress(

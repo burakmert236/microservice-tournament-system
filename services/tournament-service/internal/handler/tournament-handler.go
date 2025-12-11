@@ -2,12 +2,9 @@ package handler
 
 import (
 	"context"
-	"fmt"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/burakmert236/goodswipe-common/errors"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	proto "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
 	"github.com/burakmert236/goodswipe-tournament-service/internal/service"
@@ -28,15 +25,12 @@ func NewTournamentHandler(TournamentService service.TournamentService, logger *l
 
 func (h *TournamentHandler) EnterTournament(ctx context.Context, req *proto.EnterTournamentRequest) (*proto.MessageResponse, error) {
 	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "User id is required")
+		return nil, errors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id is required"))
 	}
 
 	err := h.tournamentService.EnterTournament(ctx, req.UserId)
 	if err != nil {
-		if appErr, ok := err.(*errors.AppError); ok {
-			return nil, appErr.ToGRPCStatus()
-		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+		apperrors.ToGRPCError(err)
 	}
 
 	resp := &proto.MessageResponse{
@@ -49,15 +43,12 @@ func (h *TournamentHandler) EnterTournament(ctx context.Context, req *proto.Ente
 
 func (h *TournamentHandler) ClaimReward(ctx context.Context, req *proto.ClaimRewardRequest) (*proto.MessageResponse, error) {
 	if req.UserId == "" || req.TournamentId == "" {
-		return nil, status.Error(codes.InvalidArgument, "User id and tournament id is required")
+		return nil, apperrors.ToGRPCError(apperrors.New(apperrors.CodeInvalidInput, "user id and tournament id are required"))
 	}
 
 	err := h.tournamentService.ClaimReward(ctx, req.UserId, req.TournamentId)
 	if err != nil {
-		if appErr, ok := err.(*errors.AppError); ok {
-			return nil, appErr.ToGRPCStatus()
-		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("internal server error: %v", err))
+		apperrors.ToGRPCError(err)
 	}
 
 	resp := &proto.MessageResponse{

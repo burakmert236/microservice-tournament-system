@@ -34,7 +34,7 @@ type App struct {
 	cleanup []func() error
 }
 
-func New(ctx context.Context, cfg *config.Config) (*App, error) {
+func New(ctx context.Context, cfg *config.Config) (*App, *apperrors.AppError) {
 	app := &App{
 		cfg:     cfg,
 		cleanup: make([]func() error, 0),

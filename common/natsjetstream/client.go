@@ -3,6 +3,7 @@ package natsjetstream
 import (
 	"fmt"
 
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -13,7 +14,7 @@ type Client struct {
 	cfg  *Config
 }
 
-func NewClient(cfg *Config) (*Client, error) {
+func NewClient(cfg *Config) (*Client, *apperrors.AppError) {
 	opts := []nats.Option{
 		nats.MaxReconnects(cfg.MaxReconnect),
 		nats.ReconnectWait(cfg.ReconnectWait),
@@ -30,13 +31,13 @@ func NewClient(cfg *Config) (*Client, error) {
 
 	nc, err := nats.Connect(cfg.URL, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to NATS: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to connect to NATS")
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
 		nc.Close()
-		return nil, fmt.Errorf("failed to create JetStream context: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create JetStream context")
 	}
 
 	client := &Client{

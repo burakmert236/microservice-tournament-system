@@ -12,6 +12,7 @@ import (
 
 	"github.com/burakmert236/goodswipe-common/config"
 	"github.com/burakmert236/goodswipe-common/database"
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	commonevents "github.com/burakmert236/goodswipe-common/events"
 	protogrpc "github.com/burakmert236/goodswipe-common/generated/v1/grpc"
 	"github.com/burakmert236/goodswipe-common/logger"
@@ -41,57 +42,57 @@ type App struct {
 	cleanup []func() error
 }
 
-func New(ctx context.Context, cfg *config.Config) (*App, error) {
+func New(ctx context.Context, cfg *config.Config) (*App, *apperrors.AppError) {
 	app := &App{
 		cfg:     cfg,
 		cleanup: make([]func() error, 0),
 	}
 
 	if err := app.initLogger(); err != nil {
-		return nil, fmt.Errorf("failed to init logger: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init logger")
 	}
 
 	if err := app.initDatabase(); err != nil {
-		return nil, fmt.Errorf("failed to init database: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init database")
 	}
 
 	if err := app.initNATS(ctx); err != nil {
-		return nil, fmt.Errorf("failed to init NATS: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init nats client")
 	}
 
 	if err := app.initMessagePublisher(ctx); err != nil {
-		return nil, fmt.Errorf("failed to init message publisher: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init messageing publisher")
 	}
 
 	if err := app.initUserClient(); err != nil {
-		return nil, fmt.Errorf("failed to init User Client: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init user service client")
 	}
 
 	if err := app.initLeaderboardClient(); err != nil {
-		return nil, fmt.Errorf("failed to init Leaderboard Client: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init leaderboard service client")
 	}
 
 	if err := app.initGRPC(); err != nil {
-		return nil, fmt.Errorf("failed to init gRPC: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init grpc server")
 	}
 
 	if err := app.initMessageSubscriber(ctx); err != nil {
-		return nil, fmt.Errorf("failed to init message subscriber: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init messaging subscriber")
 	}
 
 	if err := app.initScheduler(); err != nil {
-		return nil, fmt.Errorf("failed to init scheduler: %w", err)
+		return nil, apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to init scheduler")
 	}
 
 	return app, nil
 }
 
-func (a *App) initLogger() error {
+func (a *App) initLogger() *apperrors.AppError {
 	a.logger = logger.Development("tournament-service")
 	return nil
 }
 
-func (a *App) initDatabase() error {
+func (a *App) initDatabase() *apperrors.AppError {
 	dynamoClient, err := database.NewDynamoDBClient(a.cfg)
 	if err != nil {
 		a.logger.Fatal("Failed to create DynamoDB client: %v", err)
@@ -101,7 +102,7 @@ func (a *App) initDatabase() error {
 	return nil
 }
 
-func (a *App) initNATS(ctx context.Context) error {
+func (a *App) initNATS(ctx context.Context) *apperrors.AppError {
 	natsClient, err := natsjetstream.NewClient(&natsjetstream.Config{
 		URL:           a.cfg.NATS.URL,
 		MaxReconnect:  a.cfg.NATS.MaxReconnect,
@@ -124,7 +125,7 @@ func (a *App) initNATS(ctx context.Context) error {
 			"error", err,
 			"stream", stream.Name,
 		)
-		return err
+		return apperrors.Wrap(err, apperrors.CodeInternalServer, "failed to create jetstrem event stream")
 	}
 	a.logger.Info("Stream ready", "stream", stream.Name)
 
@@ -133,12 +134,12 @@ func (a *App) initNATS(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initMessageSubscriber(ctx context.Context) error {
+func (a *App) initMessageSubscriber(ctx context.Context) *apperrors.AppError {
 	a.eventSubscriber = subscriber.NewEventSubscriber(a.natsClient, a.tournamentService, a.logger)
 	return a.eventSubscriber.Start(ctx)
 }
 
-func (a *App) initUserClient() error {
+func (a *App) initUserClient() *apperrors.AppError {
 	userServiceAddr := a.cfg.Server.UserServiceAddress
 	userConn, err := grpc.NewClient(userServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -153,11 +154,11 @@ func (a *App) initUserClient() error {
 	return nil
 }
 
-func (a *App) initLeaderboardClient() error {
+func (a *App) initLeaderboardClient() *apperrors.AppError {
 	leaderboardServiceAddr := a.cfg.Server.LeaderboardServiceAddress
 	leaderboardConn, err := grpc.NewClient(leaderboardServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		a.logger.Fatal("Failed to connect to Laderboard Service: %v", err)
+		apperrors.Wrap(err, apperrors.CodeInternalServer, "Failed to connect to Laderboard Service")
 	}
 
 	a.cleanup = append(a.cleanup, leaderboardConn.Close)
@@ -168,7 +169,7 @@ func (a *App) initLeaderboardClient() error {
 	return nil
 }
 
-func (a *App) initGRPC() error {
+func (a *App) initGRPC() *apperrors.AppError {
 	tournamentRepo := repository.NewTournamentRepository(a.db)
 	participationRepo := repository.NewParticipationRRepository(a.db)
 	groupRepo := repository.NewGroupRepository(a.db)
@@ -197,12 +198,12 @@ func (a *App) initGRPC() error {
 	return nil
 }
 
-func (a *App) initMessagePublisher(ctx context.Context) error {
+func (a *App) initMessagePublisher(ctx context.Context) *apperrors.AppError {
 	a.eventPublisher = publisher.NewEventPublisher(a.natsClient, a.logger)
 	return nil
 }
 
-func (a *App) initScheduler() error {
+func (a *App) initScheduler() *apperrors.AppError {
 	tournamentSchedular := scheduler.NewTournamentScheduler(a.tournamentService)
 	a.scheduler = scheduler.NewScheduler(tournamentSchedular)
 
@@ -211,7 +212,7 @@ func (a *App) initScheduler() error {
 	return nil
 }
 
-func (a *App) Start() error {
+func (a *App) Start() *apperrors.AppError {
 	go func() {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", a.cfg.Server.GRPCPort))
 		if err != nil {
@@ -232,7 +233,7 @@ func (a *App) Start() error {
 	return nil
 }
 
-func (a *App) Stop() error {
+func (a *App) Stop() *apperrors.AppError {
 	a.logger.Info("Stopping application...")
 
 	if a.grpcServer != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	apperrors "github.com/burakmert236/goodswipe-common/errors"
 	commonevents "github.com/burakmert236/goodswipe-common/events"
 	protoevents "github.com/burakmert236/goodswipe-common/generated/v1/events"
 	"github.com/burakmert236/goodswipe-common/logger"
@@ -26,7 +27,7 @@ func NewEventPublisher(client *natsjetstream.Client, logger *logger.Logger) *Eve
 func (p *EventPublisher) PublishTournamentEntered(
 	ctx context.Context,
 	userId, displayName, groupId, tournamentId string,
-) error {
+) *apperrors.AppError {
 	event := &protoevents.TournamentEntered{
 		UserId:       userId,
 		DisplayName:  displayName,
@@ -37,7 +38,7 @@ func (p *EventPublisher) PublishTournamentEntered(
 
 	if err := p.publisher.PublishProto(ctx, commonevents.TournamentEntered, event); err != nil {
 		p.logger.Error(fmt.Sprintf("Failed to publish tournament entered event: %v", err))
-		return fmt.Errorf("failed to publish event: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeEventPublishError, "failed to publish tournament entered event")
 	}
 
 	p.logger.Info(fmt.Sprintf("Published tournament entered event for user: %s", userId))
@@ -48,7 +49,7 @@ func (p *EventPublisher) PublishTournamentParticipationScoreUpdated(
 	ctx context.Context,
 	userId, groupId, tournamentId string,
 	newScore int,
-) error {
+) *apperrors.AppError {
 	event := &protoevents.TournamentParticipationScoreUpdated{
 		UserId:       userId,
 		GroupId:      groupId,
@@ -59,7 +60,8 @@ func (p *EventPublisher) PublishTournamentParticipationScoreUpdated(
 
 	if err := p.publisher.PublishProto(ctx, commonevents.TournamentParticipationScoreUpdated, event); err != nil {
 		p.logger.Error(fmt.Sprintf("Failed to publish tournament score updated event: %v", err))
-		return fmt.Errorf("failed to publish event: %w", err)
+		return apperrors.Wrap(err, apperrors.CodeEventPublishError,
+			"failed to publish tournament pariticipation score updated event")
 	}
 
 	p.logger.Info(fmt.Sprintf("Published tournament score updated event for user: %s", userId))
