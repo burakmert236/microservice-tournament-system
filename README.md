@@ -26,8 +26,6 @@ The platform uses **gRPC**, **DynamoDB single-table design**, **Redis Sorted Set
 - [**Running Locally**](#running-locally)
   - [**Docker Compose**](#docker-compose)
   - [**start.sh**](#startsh)
-- [**Environment Variables**](#environment-variables)
-- [**Development Workflow**](#development-workflow)
 
 ---
 
@@ -74,7 +72,7 @@ The system is composed of three main microservices:
         │ (Port: 8000) │  │   Service    │  │  (Cron Jobs)         │
         │              │  │ + Redis      │  │                      │
         │ Single Table │  │ (Port: 9093) │  │ - Create tournaments │
-        │   Design     │  │              │  │ - Complete old       │
+        │   Design     │  │              │  │                      │
         └──────────────┘  └──────────────┘  └──────────────────────┘
                                   │
                                   ▼
@@ -173,15 +171,16 @@ leaderboard:group:{tournamentId}:{groupId}
 Tournament entry includes multiple steps:
 
 1. Validate user
-2. Create participation record
-3. Publish "user joined" event
-4. Update leaderboard
+2. Create tournament reservation via User Service
+3. Deduct enterance fee from user
+4. Create participation and update group in transaction
+5. Confirm reservation via User Service
+6. Publish "user joined" event
 
-Failures at any step require compensation:
+Transaction failure require compensation:
 
-* Roll back participation
-* Remove leaderboard scores
-* Emit compensating event
+* Roll back reservation
+* Return enterance fee to user
 
 This guarantees **eventual consistency** across services without distributed transactions.
 
@@ -193,11 +192,14 @@ Reward claims must be safe to retry (network failures, UI retries, async process
 
 Mechanism:
 
-* Participation row contains `claimStatus = NONE | LOCKED | CLAIMED`
+* Participation row contains `reward_claim_status = UNCLAIMED | PROCESSING | CLAIMED`
 * Update uses conditional write:
-  `SET claimStatus = LOCKED IF claimStatus = NONE`
-* Reward credit uses **reasonType + reasonId** (claimId) at User Service
-* User ledger ensures **each reward is credited exactly once**
+  `SET reward_claim_status = PROCESSING IF reward_claim_status = UNCLAIMED`
+* Get ranking data from Leaderboard service
+* User service gets request for reward 
+* User service stores reward claims as userId + tournamentId 
+* Reward claim entries checked for prevent double rewarding
+* User reward claims ensures **each reward is credited exactly once**
 
 This prevents:
 
@@ -211,9 +213,10 @@ This prevents:
 
 Services communicate by emitting domain events, e.g.:
 
-* `UserJoinedTournament`
-* `ScoreUpdated`
-* `RewardClaimed`
+* `UserCreated`
+* `UserLevelUp`
+* `TournamentEntered`
+* `TournamentParticipationScoreUpdated`
 
 Benefits:
 
@@ -228,13 +231,8 @@ Benefits:
 Scores are written as:
 
 ```
-ZADD LEADERBOARD:<tournamentId> score userId
+ZADD leaderboard:group:{tournamentId}:{groupId} score userId
 ```
-
-Queries:
-
-* Top N: `ZREVRANGE key 0 N WITHSCORES`
-* User rank: `ZREVRANK key userId`
 
 This makes the leaderboard service extremely fast and scalable.
 
@@ -244,35 +242,17 @@ This makes the leaderboard service extremely fast and scalable.
 
 ## **Docker Compose**
 
+Docker compose file includes every necessary service and running compose file is sufficient to start entire system:
 
-
+```
+docker compose up --build -d
+```
 
 ## **start.sh**
 
+A trivial start script. It contains only docker compose command.
 
----
-
-# **Environment Variables**
-
-| Variable                   | Purpose                        |
-| -------------------------- | ------------------------------ |
-| `DYNAMODB_ENDPOINT`        | Local or AWS DynamoDB endpoint |
-| `REDIS_HOST`               | Redis location for leaderboard |
-| `USER_SERVICE_ADDR`        | gRPC address                   |
-| `TOURNAMENT_SERVICE_ADDR`  | gRPC address                   |
-| `LEADERBOARD_SERVICE_ADDR` | gRPC address                   |
-
----
-
-# **Development Workflow**
-
-1. `./start.sh`
-2. Use `grpcurl` to test endpoints
-3. Modify protobuf → regenerate code via `buf` or `protoc`
-4. Run individual services locally for debugging:
-
-```bash
-go run cmd/tournament/main.go
 ```
-
----
+chmod +x start.sh
+./start.sh
+```
