@@ -71,6 +71,12 @@ services:
           aws dynamodb create-table --endpoint-url http://dynamodb:8000 --cli-input-json file://$$f || echo 'Table already exists or creation failed for: '$$f;
         done
       "
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 1s
+      timeout: 1s
+      retries: 1
+      start_period: 10s
 
   # Microservices
   user-service:
@@ -79,8 +85,10 @@ services:
       context: ./
       dockerfile: ./services/user-service/Dockerfile
     depends_on:
-      - dynamodb
-      - nats
+      dynamodb-init:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
     environment:
       - DEBUG_FLAG=true
     ports:
@@ -91,9 +99,12 @@ services:
       context: ./
       dockerfile: ./services/tournament-service/Dockerfile
     depends_on:
-      - dynamodb
-      - nats
-      - user-service
+      dynamodb-init:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
+      user-service:
+        condition: service_started
     environment:
       - DEBUG_FLAG=true
     ports:
@@ -104,8 +115,14 @@ services:
       context: ./
       dockerfile: ./services/leaderboard-service/Dockerfile
     depends_on:
-      - redis
-      - nats
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      user-service:
+        condition: service_started
+      tournament-service:
+        condition: service_started
     environment:
       - DEBUG_FLAG=true
     ports:

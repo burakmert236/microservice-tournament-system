@@ -25,7 +25,7 @@ The platform uses **gRPC**, **DynamoDB single-table design**, **Redis Sorted Set
   - [**4. Redis Sorted Lists for Leaderboards**](#4-redis-sorted-lists-for-leaderboards)
 - [**Running Locally**](#running-locally)
   - [**Docker Compose**](#docker-compose)
-  - [**start.sh**](#startsh)
+  - [**start.sh** and **start.ps1**](#startsh-and-startps1)
 
 ---
 
@@ -198,7 +198,7 @@ Mechanism:
 * Get ranking data from Leaderboard service
 * User service gets request for reward 
 * User service stores reward claims as userId + tournamentId 
-* Reward claim entries checked for prevent double rewarding
+* Reward claim entries checked to prevent double rewarding
 * User reward claims ensures **each reward is credited exactly once**
 
 This prevents:
@@ -248,11 +248,17 @@ Docker compose file includes every necessary service and running compose file is
 docker compose up --build -d
 ```
 
-## **start.sh**
+## **start.sh** and **start.ps1**
 
-A trivial start script. It contains only docker compose command.
+Trivial start scripts. It contains only docker compose command.
 
+For Unix machines:
 ```
 chmod +x start.sh
 ./start.sh
+```
+
+For Windows machines:
+```
+.\start.ps1
 ```
