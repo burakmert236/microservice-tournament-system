@@ -1,4 +1,4 @@
-# **GOOD SWIPE**
+# **Microservice Tournament System**
 
 A distributed, event-driven Go microservices system for managing tournaments, leaderboards, and user rewards.
 The platform uses **gRPC**, **DynamoDB single-table design**, **Redis Sorted Sets**, and **event-based communication** to achieve scalability and correctness.
@@ -7,7 +7,7 @@ The platform uses **gRPC**, **DynamoDB single-table design**, **Redis Sorted Set
 
 # **Table of Contents**
 
-- [**GOOD SWIPE**](#good-swipe)
+- [**Microservice Tournament System**](#microservice-tournament-system)
 - [**Table of Contents**](#table-of-contents)
 - [**Architecture Overview**](#architecture-overview)
     - [Technologies](#technologies)
